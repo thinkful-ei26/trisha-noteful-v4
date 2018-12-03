@@ -13,6 +13,7 @@
 		"cover": "nyc --reporter=lcov --reporter=text-summary npm test"
 	},
 	"dependencies": {
+		"bcryptjs": "^2.4.3",
 		"dotenv": "^6.0.0",
 		"express": "^4.16.3",
 		"mongoose": "^5.1.5",
