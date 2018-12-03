@@ -26,7 +26,9 @@ const localStrategy = new LocalStrategy( (username, password, done) => {
       }
 
       //.validatePassport is from passport-local
-      const isValid = user.validatePassword(password);
+      return  user.validatePassword(password);
+    })
+    .then( isValid => {
       if (!isValid) {
         return Promise.reject({
           reason: 'LoginError',
@@ -34,7 +36,6 @@ const localStrategy = new LocalStrategy( (username, password, done) => {
           location: 'password'
         });
       }
-
       //if no issues, then call done() and return user
       // per Chris, the next() is not avaible in passport so we call done() 12/3/18 workshop
       return done(null, user);

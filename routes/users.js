@@ -20,13 +20,34 @@ router.post('/', (req, res, next) => {
     return next(err);
   }
 
-  const newUser = { fullname, username, password };
+  /* Now that you've added bcrypt: replace below with a promise chain that hashes the password*/
+  // const newUser = { fullname, username, password };
 
-  User.create(newUser)
-    .then( result => {
-      res.location(`${req.originalUrl}/${result.id}`).status(201).json(result);
+  // User.create(newUser)
+  //   .then( result => {
+  //     res.location(`${req.originalUrl}/${result.id}`).status(201).json(result);
+  //   })
+  //   .catch( err => next(err));
+
+  return User.hashPassword(password)
+    .then( digest => {
+      const newUser = { 
+        fullname,
+        username, 
+        password: digest
+      }; 
+      return User.create(newUser);
     })
-    .catch( err => next(err));
+    .then( result => {
+      return res.location(`${req.originalUrl}/${result.id}`).status(201).json(result);
+    })
+    .catch( err => {
+      if(err.code === 11000 ) { //11000 is a mongo error code that checks for a duplicates
+        err = new Error('The username already exists');
+        err.status = 400;
+      }
+      next(err);
+    });
 
 });
 

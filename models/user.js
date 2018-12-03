@@ -1,6 +1,7 @@
 'use strict';
 
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 
 /* Define UserSchema and User model */
 const UserSchema = new mongoose.Schema({
@@ -27,20 +28,16 @@ UserSchema.set('toJSON', {
   }
 });
 
-// Not needed below b/c of transform above
-/* serialize to hide sensitive info from the database, note you can't use ES6 fat arrow due to this.something */
-// UserSchema.methods.serialize = function () {
-//   return {
-//     id: this._id,
-//     username: this.username, 
-//     fullname: this.fullname
-//   };
-// };
-
 //define .validatePassword as a static fn
 UserSchema.methods.validatePassword = function (incomingPassword) {
-  const user = this; 
-  return incomingPassword === user.password; 
+  // const user = this; //for clarification
+  // return incomingPassword === user.password; 
+  return bcrypt.compare(incomingPassword, this.password);
+};
+
+UserSchema.statics.hashPassword = function (incomingPassword) {
+  const digest = bcrypt.hash(incomingPassword, 10);
+  return digest;
 };
 
 
