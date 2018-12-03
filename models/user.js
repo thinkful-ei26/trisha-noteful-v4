@@ -37,7 +37,11 @@ UserSchema.set('toJSON', {
 //   };
 // };
 
-
+//define .validatePassword as a static fn
+UserSchema.methods.validatePassword = function (incomingPassword) {
+  const user = this; 
+  return incomingPassword === user.password; 
+};
 
 
 // const User = mongoose.model('User', UserSchema);
