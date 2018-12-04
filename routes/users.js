@@ -9,25 +9,16 @@ const router = express.Router();
 
 router.post('/', (req, res, next) => {
 
-  // const { fullname, username, password } = req.body;
-
   // 1) username and password fields required
   const requiredFields = ['username', 'password'];
   const missingField = requiredFields.find(field => !(field in req.body));
 
   /* validate the user inputs */
-
   if(missingField) {
     const err = new Error(`Missing '${missingField}' in request body`);
     err.status = 422;
     return next(err);
   }
-
-  // if(!username) {
-  //   const err = new Error('Missing `username` in request body');
-  //   err.status = 400;
-  //   return next(err);
-  // }
 
   /* The fields are type string */
   const stringFields = ['username', 'password', 'fullname'];
@@ -38,15 +29,21 @@ router.post('/', (req, res, next) => {
     }
   );
 
-  if( nonStringField ) {
-    return res.status(422).json({
-      code: 422,
-      reason: 'ValidationError',
-      message: `Incorrect field type: expected string and got ${typeof nonStringField}` 
-    });
+  if (nonStringField) {
+    const err = new Error(`The field ${nonStringField} must be type String`);
+    err.status = 422;
+    return next(err);
   }
 
-  // not working for some reason:
+  // if( nonStringField ) {
+  //   return res.status(422).json({
+  //     code: 422,
+  //     reason: 'ValidationError',
+  //     message: `Incorrect field type: expected string and got ${typeof nonStringField}` 
+  //   });
+  // }
+
+  // not working b/c you need to provide new Error message instead of hardcoding an obj from line 38-44
   /* {
     "username": user,
     "fullname": "Trisha Aguinaldo",
@@ -72,18 +69,19 @@ router.post('/', (req, res, next) => {
   );
 
   if (nonTrimmedField) {
-    return res.status(422).json({
-      code: 422,
-      reason: 'ValidationError',
-      message: 'Cannot start or end with whitespace',
-      location: nonTrimmedField
-    });
+    const err = new Error(`The field: ${nonTrimmedField} cannot start or end with a whitespace`);
+    err.status = 422;
+    return next(err);
+    // return res.status(422).json({
+    //   code: 422,
+    //   reason: 'ValidationError',
+    //   message: 'Cannot start or end with whitespace',
+    //   location: nonTrimmedField
+    // });
   }
 
   const sizedFields = {
-    username: {
-      min: 1
-    },
+    username: { min: 1 },
     password: {
       min: 8,
       // bcrypt truncates after 72 characters, so let's not give the illusion
@@ -94,16 +92,14 @@ router.post('/', (req, res, next) => {
 
   /* The username is a minimum of 1 character */
   const tooSmallField = Object.keys(sizedFields).find(
-    field =>
-      'min' in sizedFields[field] &&
-            req.body[field].trim().length < sizedFields[field].min
+    field => 'min' in sizedFields[field] &&
+      req.body[field].trim().length < sizedFields[field].min
   );
 
   /*  The password is a minimum of 8 and max of 72 characters */
   const tooLargeField = Object.keys(sizedFields).find(
-    field =>
-      'max' in sizedFields[field] &&
-            req.body[field].trim().length > sizedFields[field].max
+    field => 'max' in sizedFields[field] &&
+      req.body[field].trim().length > sizedFields[field].max
   );
 
   if (tooSmallField || tooLargeField) {
@@ -127,6 +123,10 @@ router.post('/', (req, res, next) => {
   //     res.location(`${req.originalUrl}/${result.id}`).status(201).json(result);
   //   })
   //   .catch( err => next(err));
+
+  //pre-trim username and password
+  let { username, password, fullname = '' } = req.body;
+  fullname = fullname.trim();
 
   return User.hashPassword(password)
     .then( digest => {

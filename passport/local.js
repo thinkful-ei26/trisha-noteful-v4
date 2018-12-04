@@ -1,6 +1,5 @@
 'use strict';
 
-const passport = require('passport');
 /* Require passport-local in the file and set the Strategy property to a local variable named LocalStrategy using object destructuring. */
 const { Strategy : LocalStrategy } = require('passport-local');
 const User = require('../models/user');

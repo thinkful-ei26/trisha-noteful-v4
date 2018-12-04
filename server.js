@@ -14,7 +14,6 @@ const foldersRouter = require('./routes/folders');
 const tagsRouter = require('./routes/tags');
 const usersRouter = require('./routes/users');
 
-
 // Create an Express application
 const app = express();
 
