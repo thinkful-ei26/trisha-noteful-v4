@@ -25,23 +25,23 @@ router.post('/', (req, res, next) => {
 
   const nonStringField = stringFields.find(
     field => {
-      field in req.body && typeof req.body[field] !== 'string';
+      return field in req.body && typeof req.body[field] !== 'string';
     }
   );
-
-  if (nonStringField) {
-    const err = new Error(`The field ${nonStringField} must be type String`);
-    err.status = 422;
-    return next(err);
-  }
-
-  // if( nonStringField ) {
-  //   return res.status(422).json({
-  //     code: 422,
-  //     reason: 'ValidationError',
-  //     message: `Incorrect field type: expected string and got ${typeof nonStringField}` 
-  //   });
+  console.log(nonStringField);
+  // if (nonStringField) {
+  //   const err = new Error(`The field ${nonStringField} must be type String`);
+  //   err.status = 422;
+  //   return next(err);
   // }
+
+  if( nonStringField ) {
+    return res.status(422).json({
+      code: 422,
+      reason: 'ValidationError',
+      message: `Incorrect field type: expected string and got ${typeof nonStringField}` 
+    });
+  }
 
   // not working b/c you need to provide new Error message instead of hardcoding an obj from line 38-44
   /* {

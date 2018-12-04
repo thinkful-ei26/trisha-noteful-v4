@@ -12,7 +12,8 @@ const router = express.Router();
 const createAuthToken = (user) => {
   return jwt.sign( { user }, JWT_SECRET, {
     subject: user.username,
-    expiresIn: JWT_EXPIRY
+    expiresIn: JWT_EXPIRY,
+    algorithm: 'HS256'
   });
 };
 
@@ -27,14 +28,25 @@ const options = {
 
 const localAuth = passport.authenticate('local', options);
 
+// //Protect endpoints using JWT Strategy
+// router.use('/', passport.authenticate('jwt', options));
+
 // /* POST on /api/login */
 // router.post('/', localAuth, (req, res) => {
 //   return res.json(req.user);
 // });
 
+
 router.post('/', localAuth, (req, res) => {
   const authToken = createAuthToken(req.user);
-  return res.json({ authToken });
+  res.json({ authToken });
+});
+
+const jwtAuth = passport.authenticate('jwt', { session: false, failWithError: true });
+
+router.post('/refresh', jwtAuth, (req, res) => {
+  const authToken = createAuthToken(req.user);
+  res.json({ authToken });
 });
 
 
