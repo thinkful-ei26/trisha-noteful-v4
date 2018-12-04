@@ -30,7 +30,7 @@ UserSchema.set('toJSON', {
 
 //define .validatePassword as a static fn
 UserSchema.methods.validatePassword = function (incomingPassword) {
-  // const user = this; //for clarification
+  // const currentUser = this; //for clarification
   // return incomingPassword === user.password; 
   return bcrypt.compare(incomingPassword, this.password);
 };
