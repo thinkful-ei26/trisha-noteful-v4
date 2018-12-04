@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 const passport = require('passport');
 const localStrategy = require('./passport/local');
 const authRouter = require('./routes/auth');
+const jwtStrategy = require('./passport/jwt');
 
 const { PORT, MONGODB_URI } = require('./config');
 
@@ -35,8 +36,9 @@ app.use('/api/tags', tagsRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/login', authRouter);
 
-//mount localStrategy
+//mount localStrategy, jwtStrategy
 passport.use(localStrategy);
+passport.use(jwtStrategy);
 
 // Custom 404 Not Found route handler
 app.use((req, res, next) => {

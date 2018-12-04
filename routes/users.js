@@ -6,10 +6,8 @@ const User = require('../models/user');
 const router = express.Router();
 
 /* POST/CREATE user on /api/users */
-
 router.post('/', (req, res, next) => {
 
-  // 1) username and password fields required
   const requiredFields = ['username', 'password'];
   const missingField = requiredFields.find(field => !(field in req.body));
 
@@ -25,41 +23,26 @@ router.post('/', (req, res, next) => {
 
   const nonStringField = stringFields.find(
     field => {
-      field in req.body && typeof req.body[field] !== 'string';
+      return field in req.body && typeof req.body[field] !== 'string';
     }
   );
-
-  if (nonStringField) {
-    const err = new Error(`The field ${nonStringField} must be type String`);
-    err.status = 422;
-    return next(err);
-  }
-
-  // if( nonStringField ) {
-  //   return res.status(422).json({
-  //     code: 422,
-  //     reason: 'ValidationError',
-  //     message: `Incorrect field type: expected string and got ${typeof nonStringField}` 
-  //   });
+  
+  /* 12/4/18: Mentor Q: why use res.status.json vs throw error? */
+  // if (nonStringField) {
+  //   const err = new Error(`The field ${nonStringField} must be type String`);
+  //   err.status = 422;
+  //   return next(err);
   // }
 
-  // not working b/c you need to provide new Error message instead of hardcoding an obj from line 38-44
-  /* {
-    "username": user,
-    "fullname": "Trisha Aguinaldo",
-    "password": false
-  } */
-  //error message:
-
-  /*  {
-    "expose": true,
-    "statusCode": 400,
-    "status": 400,
-    "body": "{\n    \"username\": user,\n    \"fullname\": \"Trisha Aguinaldo\",\n    \"password\": false\n}",
-    "type": "entity.parse.failed",
-    "message": "Unexpected token u in JSON at position 18"
-  } */
-
+  //if you use {} on res.status.json make sure you return it
+  //otherwise without the curly braces you do not to return it 
+  if( nonStringField ) {
+    return res.status(422).json({
+      code: 422,
+      reason: 'ValidationError',
+      message: `Incorrect field type: expected string and got ${typeof nonStringField}` 
+    });
+  }
 
   /*  The username and password should not have leading or trailing whitespace. And the endpoint should not automatically trim the values */
 
@@ -114,15 +97,6 @@ router.post('/', (req, res, next) => {
       location: tooSmallField || tooLargeField
     });
   }
-
-  /* Now that you've added bcrypt: replace below with a promise chain that hashes the password*/
-  // const newUser = { fullname, username, password };
-
-  // User.create(newUser)
-  //   .then( result => {
-  //     res.location(`${req.originalUrl}/${result.id}`).status(201).json(result);
-  //   })
-  //   .catch( err => next(err));
 
   //pre-trim username and password
   let { username, password, fullname = '' } = req.body;

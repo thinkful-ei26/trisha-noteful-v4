@@ -2,6 +2,9 @@
 
 require('dotenv').config();
 
+//you can require jwt here as well, that way, jwt is accesible in your all your routes folder. 
+// const jwt = require('jsonwebtoken');
+
 module.exports = {
   PORT: process.env.PORT || 8080,
   MONGODB_URI: process.env.MONGODB_URI || 'mongodb://localhost/noteful',
