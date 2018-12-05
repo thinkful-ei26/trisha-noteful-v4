@@ -203,18 +203,41 @@ router.put('/:id', (req, res, next) => {
     toUpdate.$unset = {folderId : 1};
   }
 
-  Note.findOneAndUpdate({ _id : id, userId }, toUpdate, { new: true })
-    .then(result => {
-      if (result) {
-        res.json(result);
-      } else {
-        next();
+  // Note.findOneAndUpdate({ _id : id, userId }, toUpdate, { new: true })
+  //   .then(result => {
+  //     if (result) {
+  //       res.json(result);
+  //     } else {
+  //       next();
+  //     }
+  //   })
+  //   .catch(err => {
+  //     next(err);
+  //   });
+
+  Folder.countDocuments({ _id: toUpdate.folderId, userId }) 
+    .then(count => {
+      if (count === 0) {
+        const err = new Error('The `folderId` is not valid');
+        err.status = 400;
+        return next(err);
       }
+      return Tag.countDocuments({ _id: toUpdate.tags, userId });
+    })
+    .then(count => {
+      if (count === 0) {
+        const err = new Error('The `tags` is not valid');
+        err.status = 400;
+        return next(err);
+      }
+      return  Note.findOneAndUpdate({ _id: id, userId}, toUpdate, { new : true });
+    })
+    .then(result => {
+      res.json(result);
     })
     .catch(err => {
       next(err);
     });
-
 });
 
 /* ========== DELETE/REMOVE A SINGLE ITEM ========== */
