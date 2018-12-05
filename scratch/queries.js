@@ -8,6 +8,11 @@ const Note = require('../models/note');
 mongoose.connect(MONGODB_URI)
   .then(() => {
 
+    const newNote = {
+      title: 'this is a new note', 
+      content: 'bacon ipsum'
+    };
+
     /**
      * Find/Search for notes using Note.find
      */
