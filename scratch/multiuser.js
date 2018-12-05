@@ -74,17 +74,9 @@ router.get('/:id', (req, res, next) => {
 /* ========== POST/CREATE AN ITEM ========== */
 router.post('/', (req, res, next) => {
   const { title, content, folderId, tags } = req.body;
-  //req.user coming from passport
-  // we don't need userId in req.body for sensitive information
   const userId = req.user.id;
 
   /***** Never trust users - validate input *****/
-  // if (!userId) {
-  //   const err = new Error('Missing `userId` in request body');
-  //   err.status = 400;
-  //   return next(err);
-  // }
-
   if (!title) {
     const err = new Error('Missing `title` in request body');
     err.status = 400;
@@ -106,15 +98,15 @@ router.post('/', (req, res, next) => {
     }
   }
 
+  if (!userId) {
+    const err = new Error('Missing `userId` in request body');
+    err.status = 400;
+    return next(err);
+  }
+
   const newNote = { title, content, folderId, tags, userId };
   if (newNote.folderId === '') {
     delete newNote.folderId;
-  }
-
-  if (newNote.folderId && !mongoose.Types.ObjectId.isValid(newNote.folderId)) {
-    const err = new Error('The `folderId` is not valid');
-    err.status = 400;
-    return next(err);
   }
 
   Note.create(newNote)
@@ -127,6 +119,59 @@ router.post('/', (req, res, next) => {
 });
 
 /* ========== PUT/UPDATE A SINGLE ITEM ========== */
+
+// need a way to validate that the userId is the same as the userId in the folder and tags
+
+// const validateFolders = (folderId, userId) => {
+//   if (folderId === userId) {
+//     return Promise.resolve(); /* the entire note via a promise */
+//   }
+//   if (folderId && !mongoose.Types.ObjectId.isValid(folderId)) {
+//     const err = new Error('The `folderId` is not valid');
+//     err.status = 400;
+//     return Promise.reject(err);
+//   }
+// };
+// /* 
+// "tags": [
+//   {
+//       "name": "Waldo",
+//       "userId": "000000000000000000000002",
+//       "createdAt": "2018-12-05T17:29:31.923Z",
+//       "updatedAt": "2018-12-05T17:29:31.923Z",
+//       "id": "333333333333333333333302"
+//   }
+// ], */
+
+// const validateTags = (tags, userId) => {
+  
+//   if (tags.id === userId) {
+//     /* the entire note via a promise */
+//     return Promise.resolve();
+//   }
+
+//   //1. tags is an array
+//   if ( !Array.isArray(tags) ) {
+//     const err = new Error('The `tags` property must be an array');
+//     err.status = 400;
+//     return Promise.reject(err);
+//   }
+//   //2. tag id in the array is a valid ObjectId
+//   // forEach loop is not needed because you don't need all fields/property
+//   // use filter: you've got an array of tags, you can filter the tagsId that doesn't match the userId and then throw an error if it fails
+
+//   tags.filter();
+//   if (tags[id] && !mongoose.Types.ObjectId.isValid(tagId)) {
+//     const err = new Error('The `tagId` is not valid');
+//     err.status = 400;
+//     return Promise.reject(err);
+//   }
+
+//   // const invalid = tags.filter( field => {
+//   //   if (field)
+//   // });
+  
+// };
 
 router.put('/:id', (req, res, next) => {
   // const { id, tags, folderId } = req.params;
@@ -175,11 +220,11 @@ router.put('/:id', (req, res, next) => {
     toUpdate.$unset = {folderId : 1};
   }
 
-  // if (toUpdate.userId && !mongoose.Types.ObjectId.isValid(toUpdate.userId)) {
-  //   const err = new Error('The `userId` is not valid');
-  //   err.status = 400;
-  //   return next(err);
-  // }
+  if (toUpdate.userId && !mongoose.Types.ObjectId.isValid(toUpdate.userId)) {
+    const err = new Error('The `userId` is not valid');
+    err.status = 400;
+    return next(err);
+  }
 
   //validate that folders and notes are valid via a promise
   //invoke the validate functions and pass in params
@@ -198,7 +243,7 @@ router.put('/:id', (req, res, next) => {
   //     next(err);
   //   });
  
-  Note.findOneAndUpdate({ _id : id, userId }, toUpdate, { new: true })
+  Note.findByIdAndUpdate(id, toUpdate, { new: true })
     .then(result => {
       if (result) {
         res.json(result);
