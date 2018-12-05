@@ -5,6 +5,8 @@ const mongoose = require('mongoose');
 const passport = require('passport');
 
 const Note = require('../models/note');
+const Folder = require('../models/folder');
+const Tag = require('../models/tag');
 
 const router = express.Router();
 
@@ -79,11 +81,6 @@ router.post('/', (req, res, next) => {
   const userId = req.user.id;
 
   /***** Never trust users - validate input *****/
-  // if (!userId) {
-  //   const err = new Error('Missing `userId` in request body');
-  //   err.status = 400;
-  //   return next(err);
-  // }
 
   if (!title) {
     const err = new Error('Missing `title` in request body');
@@ -93,6 +90,12 @@ router.post('/', (req, res, next) => {
 
   if (folderId && !mongoose.Types.ObjectId.isValid(folderId)) {
     const err = new Error('The `folderId` is not valid');
+    err.status = 400;
+    return next(err);
+  }
+
+  if (!Array.isArray(tags)) {
+    const err = new Error('The `tags` property must be an array');
     err.status = 400;
     return next(err);
   }
@@ -111,19 +114,38 @@ router.post('/', (req, res, next) => {
     delete newNote.folderId;
   }
 
-  if (newNote.folderId && !mongoose.Types.ObjectId.isValid(newNote.folderId)) {
-    const err = new Error('The `folderId` is not valid');
-    err.status = 400;
-    return next(err);
-  }
+  // Note.create(newNote)
+  //   .then(result => {
+  //     res.location(`${req.originalUrl}/${result.id}`).status(201).json(result);
+  //   })
+  //   .catch(err => {
+  //     next(err);
+  //   });
 
-  Note.create(newNote)
+  Folder.countDocuments({ _id: folderId, userId }) //make sure the folderId is from user by checking the count of the array 
+    .then(count => {
+      if (count === 0) {
+        const err = new Error('The `folderId` is not valid');
+        err.status = 400;
+        return next(err);
+      }
+      return Tag.countDocuments({ _id: tags, userId });
+    })
+    .then(count => {
+      if (count === 0) {
+        const err = new Error('The `tags` is not valid');
+        err.status = 400;
+        return next(err);
+      }
+      return  Note.create(newNote);
+    })
     .then(result => {
       res.location(`${req.originalUrl}/${result.id}`).status(201).json(result);
     })
     .catch(err => {
       next(err);
     });
+
 });
 
 /* ========== PUT/UPDATE A SINGLE ITEM ========== */
@@ -161,6 +183,12 @@ router.put('/:id', (req, res, next) => {
     return next(err);
   }
 
+  if (!Array.isArray(toUpdate.tags)) {
+    const err = new Error('The `tags` property must be an array');
+    err.status = 400;
+    return next(err);
+  }
+
   if (toUpdate.tags) {
     const badIds = toUpdate.tags.filter((tag) => !mongoose.Types.ObjectId.isValid(tag));
     if (badIds.length) {
@@ -175,29 +203,6 @@ router.put('/:id', (req, res, next) => {
     toUpdate.$unset = {folderId : 1};
   }
 
-  // if (toUpdate.userId && !mongoose.Types.ObjectId.isValid(toUpdate.userId)) {
-  //   const err = new Error('The `userId` is not valid');
-  //   err.status = 400;
-  //   return next(err);
-  // }
-
-  //validate that folders and notes are valid via a promise
-  //invoke the validate functions and pass in params
-  // Promise.all([
-  //   validateFolders( folderId, userId),
-  //   validateTags( tags ,userId)
-  // ])
-  //   .then(result => {
-  //     if (result) {
-  //       res.json(result);
-  //     } else {
-  //       next();
-  //     }
-  //   })
-  //   .catch(err => {
-  //     next(err);
-  //   });
- 
   Note.findOneAndUpdate({ _id : id, userId }, toUpdate, { new: true })
     .then(result => {
       if (result) {
