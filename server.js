@@ -35,6 +35,7 @@ app.use('/api/folders', foldersRouter);
 app.use('/api/tags', tagsRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/login', authRouter);
+app.use('/api/refresh', authRouter);
 
 //mount localStrategy, jwtStrategy
 passport.use(localStrategy);
