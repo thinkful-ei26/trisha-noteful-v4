@@ -40,7 +40,6 @@ UserSchema.statics.hashPassword = function (incomingPassword) {
   return digest;
 };
 
-
 // const User = mongoose.model('User', UserSchema);
 // module.exports = { User };  //if you use this, make sure that you the require on server.js is also an object
 
