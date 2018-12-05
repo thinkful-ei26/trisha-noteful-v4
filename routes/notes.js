@@ -74,6 +74,7 @@ router.get('/:id', (req, res, next) => {
 /* ========== POST/CREATE AN ITEM ========== */
 router.post('/', (req, res, next) => {
   const { title, content, folderId, tags } = req.body;
+  const userId = req.user.id;
 
   /***** Never trust users - validate input *****/
   if (!title) {
@@ -97,7 +98,13 @@ router.post('/', (req, res, next) => {
     }
   }
 
-  const newNote = { title, content, folderId, tags };
+  if (!userId) {
+    const err = new Error('Missing `userId` in request body');
+    err.status = 400;
+    return next(err);
+  }
+
+  const newNote = { title, content, folderId, tags, userId };
   if (newNote.folderId === '') {
     delete newNote.folderId;
   }
@@ -112,8 +119,19 @@ router.post('/', (req, res, next) => {
 });
 
 /* ========== PUT/UPDATE A SINGLE ITEM ========== */
+
+// need a way to validate that the userId is the same as the userId in the folder and tags
+
+const validateFolders = (folderId, userId) => {
+  if (folderId === userId) {
+    return /* the entire note */;
+  }
+};
+
+
 router.put('/:id', (req, res, next) => {
   const { id } = req.params;
+  const userId = req.user.id;
 
   const toUpdate = {};
   const updateableFields = ['title', 'content', 'folderId', 'tags'];
@@ -157,6 +175,12 @@ router.put('/:id', (req, res, next) => {
     toUpdate.$unset = {folderId : 1};
   }
 
+  if (toUpdate.userId && !mongoose.Types.ObjectId.isValid(toUpdate.userId)) {
+    const err = new Error('The `userId` is not valid');
+    err.status = 400;
+    return next(err);
+  }
+
   Note.findByIdAndUpdate(id, toUpdate, { new: true })
     .then(result => {
       if (result) {
@@ -173,6 +197,7 @@ router.put('/:id', (req, res, next) => {
 /* ========== DELETE/REMOVE A SINGLE ITEM ========== */
 router.delete('/:id', (req, res, next) => {
   const { id } = req.params;
+  const userId = req.user.id;
 
   /***** Never trust users - validate input *****/
   if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -181,7 +206,13 @@ router.delete('/:id', (req, res, next) => {
     return next(err);
   }
 
-  Note.findByIdAndRemove(id)
+  if (!userId) {
+    const err = new Error('Missing `userId` in request body');
+    err.status = 400;
+    return next(err);
+  }
+
+  Note.findOneAndRemove({ _id : id, userId })
     .then(() => {
       res.sendStatus(204);
     })
