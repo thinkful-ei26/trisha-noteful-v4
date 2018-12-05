@@ -28,26 +28,18 @@ const options = {
 
 const localAuth = passport.authenticate('local', options);
 
-// //Protect endpoints using JWT Strategy
-// router.use('/', passport.authenticate('jwt', options));
-
-// /* POST on /api/login */
-// router.post('/', localAuth, (req, res) => {
-//   return res.json(req.user);
-// });
-
-
+// /* POST on /api/login and send jwt authToken as response*/
 router.post('/', localAuth, (req, res) => {
   const authToken = createAuthToken(req.user);
   res.json({ authToken });
 });
 
-const jwtAuth = passport.authenticate('jwt', { session: false, failWithError: true });
+//Protect endpoints using JWT Strategy
+const jwtAuth = passport.authenticate('jwt', options);
 
 router.post('/refresh', jwtAuth, (req, res) => {
   const authToken = createAuthToken(req.user);
   res.json({ authToken });
 });
-
 
 module.exports = router;
