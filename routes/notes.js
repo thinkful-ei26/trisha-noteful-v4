@@ -141,8 +141,7 @@ const validateTagIds = (tags, userId) => {
 /* ========== POST/CREATE AN ITEM ========== */
 router.post('/', (req, res, next) => {
   const { title, content, folderId, tags } = req.body;
-  //req.user coming from passport
-  // we don't need userId in req.body for sensitive information
+  //req.user coming from passport - we don't need userId in req.body for sensitive information
   const userId = req.user.id;
 
   /***** Never trust users - validate input *****/
@@ -154,12 +153,7 @@ router.post('/', (req, res, next) => {
 
   const newNote = { title, content, folderId, tags, userId };
 
-  // if (newNote.folderId && !mongoose.Types.ObjectId.isValid(newNote.folderId)) {
-  //   const err = new Error('The `folderId` is invalid `id`');
-  //   err.status = 400;
-  //   return next(err);
-  // }
-
+  //use promise all instead of chaining .then() for readability
   Promise.all([
     validateFolderId(folderId, userId),
     validateTagIds(tags, userId)
@@ -174,6 +168,9 @@ router.post('/', (req, res, next) => {
       next(err);
     });
 
+  /* You're going to repeat similar validations on POST and PUT enpoints, just create a seperate fn so you can re-use it. remember we are lazy (DRY) */
+
+  /* solution from thu, 12/5/18 - folders only */
   // validateFolderId(folderId, userId)
   //   .then( () => {
   //     return Note.create(newNote);
@@ -184,6 +181,8 @@ router.post('/', (req, res, next) => {
   //   .catch(err => {
   //     next(err);
   //   });
+
+  /* solution from wed, 12/5/18 */
 
   // Folder.countDocuments({ _id: folderId, userId }) //make sure the folderId is from user by checking the count of the array 
   //   .then(count => {
@@ -241,45 +240,7 @@ router.put('/:id', (req, res, next) => {
     return next(err);
   }
 
-  //moved all to validatetags and validatefolder
-  // if (toUpdate.folderId === '') {
-  //   delete toUpdate.folderId;
-  //   toUpdate.$unset = {folderId : 1};
-  // }
-
-  // if (toUpdate.folderId && !mongoose.Types.ObjectId.isValid(toUpdate.folderId)) {
-  //   const err = new Error('The `folderId` is not valid');
-  //   err.status = 400;
-  //   return next(err);
-  // }
-
-  // if (!Array.isArray(toUpdate.tags)) {
-  //   const err = new Error('The `tags` property must be an array');
-  //   err.status = 400;
-  //   return next(err);
-  // }
-
-  // if (toUpdate.tags) {
-  //   const badIds = toUpdate.tags.filter((tag) => !mongoose.Types.ObjectId.isValid(tag));
-  //   if (badIds.length) {
-  //     const err = new Error('The `tags` array contains an invalid `id`');
-  //     err.status = 400;
-  //     return next(err);
-  //   }
-  // }
-
-  // Note.findOneAndUpdate({ _id : id, userId }, toUpdate, { new: true })
-  //   .then(result => {
-  //     if (result) {
-  //       res.json(result);
-  //     } else {
-  //       next();
-  //     }
-  //   })
-  //   .catch(err => {
-  //     next(err);
-  //   });
-
+  //moved all to validatetags and validatefolder to separate fns, then invoke below
   Promise.all([
     validateFolderId(folderId, userId),
     validateTagIds(tags, userId)
@@ -293,30 +254,7 @@ router.put('/:id', (req, res, next) => {
     .catch(err => {
       next(err);
     });
-
-  // Folder.countDocuments({ _id: toUpdate.folderId, userId }) 
-  //   .then(count => {
-  //     if (count === 0) {
-  //       const err = new Error('The `folderId` is not valid');
-  //       err.status = 400;
-  //       return next(err);
-  //     }
-  //     return Tag.countDocuments({ _id: toUpdate.tags, userId });
-  //   })
-  //   .then(count => {
-  //     if (count === 0) {
-  //       const err = new Error('The `tags` is not valid');
-  //       err.status = 400;
-  //       return next(err);
-  //     }
-  //     return  Note.findOneAndUpdate({ _id: id, userId}, toUpdate, { new : true });
-  //   })
-  //   .then(result => {
-  //     res.json(result);
-  //   })
-  //   .catch(err => {
-  //     next(err);
-  //   });
+    
 });
 
 /* ========== DELETE/REMOVE A SINGLE ITEM ========== */

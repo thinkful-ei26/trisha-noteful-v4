@@ -4,6 +4,7 @@ const express = require('express');
 const morgan = require('morgan');
 const mongoose = require('mongoose');
 const passport = require('passport');
+
 const localStrategy = require('./passport/local');
 const authRouter = require('./routes/auth');
 const jwtStrategy = require('./passport/jwt');
