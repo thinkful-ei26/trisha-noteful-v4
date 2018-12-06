@@ -270,8 +270,26 @@ describe('Noteful API - Users', () => {
           expect(res.body.message).to.equal('The username already exists');
         });
     });
-    // it('Should trim fullname');
-    //   it('Should reject users with non-string first name'
+
+    //this test should pass!
+    it('Should trim fullname', () => {
+      return chai
+        .request(app) //if your server is not running, then chai will find a suitable port to listen to
+        .post('/api/users')
+        .send({
+          username,
+          password,
+          fullname: ` ${fullname} `
+        })
+        .then( res => {
+          expect(res).to.have.status(201);
+          expect(res).to.be.an('object');
+          expect(res.body).to.have.keys('id', 'username', 'fullname');
+          expect(res.body.id).to.exist;
+          expect(res.body.username).to.equal(username);
+          expect(res.body.fullname).to.equal(fullname);
+        });
+    });
   
   });
 });
