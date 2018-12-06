@@ -204,35 +204,42 @@ describe('Noteful API - Folders', () => {
 
   });
 
-  describe('POST /api/folders', function () {
+  describe('POST /api/folders', () => {
 
-    it('should create and return a new item when provided valid data', function () {
+    it('should create and return a new item when provided valid data', () => {
       const newItem = { name: 'newFolder' };
-      let body;
+      
+      //body is response body of the newnote you will create on every post
+      let folder;
       return chai.request(app)
         .post('/api/folders')
+        .set('Authorization', `Bearer ${token}`)
         .send(newItem)
-        .then(function (res) {
-          body = res.body;
+        .then( res => {
+          // console.log(res.body);
+          //grab one folder from the array of folders
+          folder = res.body[0];
           expect(res).to.have.status(201);
           expect(res).to.have.header('location');
           expect(res).to.be.json;
-          expect(body).to.be.a('object');
-          expect(body).to.have.all.keys('id', 'name', 'createdAt', 'updatedAt');
-          return Folder.findById(body.id);
+          expect(folder).to.be.an('object');
+          expect(folder).to.have.all.keys('id', 'name', 'createdAt', 'updatedAt', 'userId' ); 
+          //if validation passes, we've created a new folder, find one then test it
+          return Folder.findOne({ _id: folder.id, userId: user.id });
         })
         .then(data => {
-          expect(body.id).to.equal(data.id);
-          expect(body.name).to.equal(data.name);
-          expect(new Date(body.createdAt)).to.eql(data.createdAt);
-          expect(new Date(body.updatedAt)).to.eql(data.updatedAt);
+          expect(folder.id).to.equal(data.id);
+          expect(folder.name).to.equal(data.name);
+          expect(new Date(folder.createdAt)).to.eql(data.createdAt);
+          expect(new Date(folder.updatedAt)).to.eql(data.updatedAt);
         });
     });
 
-    it('should return an error when missing "name" field', function () {
+    it('should return an error when missing "name" field', () => {
       const newItem = {};
       return chai.request(app)
         .post('/api/folders')
+        .set('Authorization', `Bearer ${token}`)
         .send(newItem)
         .then(res => {
           expect(res).to.have.status(400);
@@ -242,10 +249,11 @@ describe('Noteful API - Folders', () => {
         });
     });
 
-    it('should return an error when "name" field is empty string', function () {
+    it('should return an error when "name" field is empty string', () => {
       const newItem = { name: '' };
       return chai.request(app)
         .post('/api/folders')
+        .set('Authorization', `Bearer ${token}`)
         .send(newItem)
         .then(res => {
           expect(res).to.have.status(400);
@@ -255,11 +263,14 @@ describe('Noteful API - Folders', () => {
         });
     });
 
-    it('should return an error when given a duplicate name', function () {
-      return Folder.findOne()
+    it.only('should return an error when given a duplicate name', () => {
+      return Folder.findOne({ userId: user.id })
         .then(data => {
           const newItem = { name: data.name };
-          return chai.request(app).post('/api/folders').send(newItem);
+          return chai.request(app)
+            .post('/api/folders')
+            .set('Authorization', `Bearer ${token}`)
+            .send(newItem);
         })
         .then(res => {
           expect(res).to.have.status(400);
@@ -275,6 +286,7 @@ describe('Noteful API - Folders', () => {
       const newItem = { name: 'newFolder' };
       return chai.request(app)
         .post('/api/folders')
+        .set('Authorization', `Bearer ${token}`)
         .send(newItem)
         .then(res => {
           expect(res).to.have.status(500);
@@ -286,9 +298,9 @@ describe('Noteful API - Folders', () => {
 
   });
 
-  describe('PUT /api/folders/:id', function () {
+  describe('PUT /api/folders/:id', () => {
 
-    it('should update the folder', function () {
+    it('should update the folder', () => {
       const updateItem = { name: 'Updated Name' };
       let data;
       return Folder.findOne()
@@ -296,7 +308,7 @@ describe('Noteful API - Folders', () => {
           data = _data;
           return chai.request(app).put(`/api/folders/${data.id}`).send(updateItem);
         })
-        .then(function (res) {
+        .then( res => {
           expect(res).to.have.status(200);
           expect(res).to.be.json;
           expect(res.body).to.be.a('object');
@@ -309,7 +321,7 @@ describe('Noteful API - Folders', () => {
         });
     });
 
-    it('should respond with a 400 for an invalid id', function () {
+    it('should respond with a 400 for an invalid id', () => {
       const updateItem = { name: 'Blah' };
       return chai.request(app)
         .put('/api/folders/NOT-A-VALID-ID')
@@ -320,7 +332,7 @@ describe('Noteful API - Folders', () => {
         });
     });
 
-    it('should respond with a 404 for an id that does not exist', function () {
+    it('should respond with a 404 for an id that does not exist', () => {
       const updateItem = { name: 'Blah' };
       // The string "DOESNOTEXIST" is 12 bytes which is a valid Mongo ObjectId
       return chai.request(app)
@@ -331,7 +343,7 @@ describe('Noteful API - Folders', () => {
         });
     });
 
-    it('should return an error when missing "name" field', function () {
+    it('should return an error when missing "name" field', () => {
       const updateItem = {};
       let data;
       return Folder.findOne()
@@ -347,7 +359,7 @@ describe('Noteful API - Folders', () => {
         });
     });
 
-    it('should return an error when "name" field is empty string', function () {
+    it('should return an error when "name" field is empty string', () => {
       const updateItem = { name: '' };
       let data;
       return Folder.findOne()
@@ -365,7 +377,7 @@ describe('Noteful API - Folders', () => {
         });
     });
 
-    it('should return an error when given a duplicate name', function () {
+    it('should return an error when given a duplicate name', () => {
       return Folder.find().limit(2)
         .then(results => {
           const [item1, item2] = results;
@@ -382,7 +394,7 @@ describe('Noteful API - Folders', () => {
         });
     });
 
-    it('should catch errors and respond properly', function () {
+    it('should catch errors and respond properly', () => {
       sandbox.stub(Folder.schema.options.toObject, 'transform').throws('FakeError');
 
       const updateItem = { name: 'Updated Name' };
@@ -402,9 +414,9 @@ describe('Noteful API - Folders', () => {
 
   });
 
-  describe('DELETE /api/folders/:id', function () {
+  describe('DELETE /api/folders/:id', () => {
 
-    it('should delete an existing folder and respond with 204', function () {
+    it('should delete an existing folder and respond with 204', () => {
       let data;
       return Folder.findOne()
         .then(_data => {
@@ -421,7 +433,7 @@ describe('Noteful API - Folders', () => {
         });
     });
 
-    it('should delete an existing folder and remove folderId reference from note', function () {
+    it('should delete an existing folder and remove folderId reference from note', () => {
       let folderId;
       return Note.findOne({ folderId: { $exists: true } })
         .then(data => {

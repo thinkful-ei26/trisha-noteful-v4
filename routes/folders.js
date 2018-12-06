@@ -65,14 +65,14 @@ router.post('/', (req, res, next) => {
     return next(err);
   }
 
-  Folder.find({userId})
-    .sort('name')
-    .then(result => {
-      res.location(`${req.originalUrl}/${result.id}`).status(201).json(result);
-    })
-    .catch(err => {
-      next(err);
-    });
+  // Folder.find({userId})
+  //   .sort('name')
+  //   .then(result => {
+  //     res.location(`${req.originalUrl}/${result.id}`).status(201).json(result);
+  //   })
+  //   .catch(err => {
+  //     next(err);
+  //   });
 
   Folder.create(newFolder)
     .then(result => {
