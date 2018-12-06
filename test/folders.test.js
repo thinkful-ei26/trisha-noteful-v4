@@ -125,8 +125,12 @@ describe('Noteful API - Folders', () => {
         });
     });
 
-    it('should catch errors and respond properly', () => {
-      sandbox.stub(Folder.schema.options.toObject, 'transform').throws('FakeError');
+    it.only('should catch errors and respond properly', () => {
+      //sandbox.stub should throw an error, it's returning undefined
+      const stub = sandbox.stub(Folder.schema.options.toJSON, 'transform').throws('FakeError');
+
+      console.log(stub);
+
       return chai.request(app)
         .get('/api/folders')
         .set('Authorization', `Bearer ${token}`)
@@ -280,7 +284,7 @@ describe('Noteful API - Folders', () => {
         });
     });
 
-    it('should catch errors and respond properly', function () {
+    it('should catch errors and respond properly', () => {
       sandbox.stub(Folder.schema.options.toObject, 'transform').throws('FakeError');
 
       const newItem = { name: 'newFolder' };
