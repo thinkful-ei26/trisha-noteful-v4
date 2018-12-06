@@ -219,7 +219,23 @@ describe('Noteful API - Users', () => {
           expect(res.body.location).to.equal('username');
         });
     });
-    // it('Should reject users with password less than 8 characters');
+
+    it('Should reject users with password less than 8 characters', () => {
+      return chai
+        .request(app)
+        .post('/api/users')
+        .send({
+          username,
+          password: '',
+          fullname
+        })
+        .then( res => {
+          expect(res).to.have.status(422);
+          expect(res.body.reason).to.equal('ValidationError');
+          expect(res.body.message).to.equal('Must be at least 8 characters long');
+          expect(res.body.location).to.equal('password');
+        });
+    });
     // it('Should reject users with password greater than 72 characters');
     // it('Should reject users with duplicate username');
     // it('Should trim fullname');
