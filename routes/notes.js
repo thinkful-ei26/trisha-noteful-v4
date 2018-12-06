@@ -73,6 +73,71 @@ router.get('/:id', (req, res, next) => {
     });
 });
 
+//folderId = invalid
+//folderId = "" (empty string)
+//folderId = valid mongo _id but does not exist
+//folderId = folder belongs to another user
+
+//folderId = undefined
+//folderId = valid mongo _id and folder exist
+
+const validateFolderId = (folderId, userId) => {
+  //null, undefined, empty string, negative number
+  if(folderId === '') {
+    const err = new Error('The `folderId` is not valid');
+    err.status = 400;
+    return Promise.reject(err);
+  }
+  if (folderId && !mongoose.Types.ObjectId.isValid(folderId)) {
+    const err = new Error('The `folderId` is not valid');
+    err.status = 400;
+    return Promise.reject(err);
+  }
+  return Folder.countDocuments({ _id: folderId, userId }) //make sure the folderId is from user by checking the count of the array 
+    .then(count => {
+      if (count === 0) {
+        const err = new Error('The `folderId` is not valid');
+        err.status = 400;
+        return Promise.reject(err);
+      }
+    });
+};
+
+const validateTagIds = (tags, userId) => {
+  //null, undefined, empty string, negative number
+  if(tags === undefined) {
+    return Promise.resolve();
+  }
+  
+  if (!Array.isArray(tags)) {
+    const err = new Error('The `tags` property must be an array');
+    err.status = 400;
+    return Promise.reject(err);
+  }
+
+  const badIds = tags.filter((tag) => !mongoose.Types.ObjectId.isValid(tag));
+  if (badIds.length) {
+    const err = new Error('The `tags` array contains an invalid `id`');
+    err.status = 400;
+    return Promise.reject(err);
+  }
+
+  return Tag.countDocuments({
+    $and: [ {
+      _id: { $in: tags },
+      userId 
+    }
+    ]
+  }) 
+    .then(count => {
+      if (tags.length > count) {
+        const err = new Error('The `tags` array contains an invalid `id`');
+        err.status = 400;
+        return Promise.reject(err);
+      }
+    });
+};
+
 /* ========== POST/CREATE AN ITEM ========== */
 router.post('/', (req, res, next) => {
   const { title, content, folderId, tags } = req.body;
@@ -81,63 +146,26 @@ router.post('/', (req, res, next) => {
   const userId = req.user.id;
 
   /***** Never trust users - validate input *****/
-
   if (!title) {
     const err = new Error('Missing `title` in request body');
     err.status = 400;
     return next(err);
   }
 
-  if (folderId && !mongoose.Types.ObjectId.isValid(folderId)) {
-    const err = new Error('The `folderId` is not valid');
-    err.status = 400;
-    return next(err);
-  }
-
-  if (!Array.isArray(tags)) {
-    const err = new Error('The `tags` property must be an array');
-    err.status = 400;
-    return next(err);
-  }
-
-  if (tags) {
-    const badIds = tags.filter((tag) => !mongoose.Types.ObjectId.isValid(tag));
-    if (badIds.length) {
-      const err = new Error('The `tags` array contains an invalid `id`');
-      err.status = 400;
-      return next(err);
-    }
-  }
-
   const newNote = { title, content, folderId, tags, userId };
-  if (newNote.folderId === '') {
-    delete newNote.folderId;
-  }
 
-  // Note.create(newNote)
-  //   .then(result => {
-  //     res.location(`${req.originalUrl}/${result.id}`).status(201).json(result);
-  //   })
-  //   .catch(err => {
-  //     next(err);
-  //   });
+  // if (newNote.folderId && !mongoose.Types.ObjectId.isValid(newNote.folderId)) {
+  //   const err = new Error('The `folderId` is invalid `id`');
+  //   err.status = 400;
+  //   return next(err);
+  // }
 
-  Folder.countDocuments({ _id: folderId, userId }) //make sure the folderId is from user by checking the count of the array 
-    .then(count => {
-      if (count === 0) {
-        const err = new Error('The `folderId` is not valid');
-        err.status = 400;
-        return next(err);
-      }
-      return Tag.countDocuments({ _id: tags, userId });
-    })
-    .then(count => {
-      if (count === 0) {
-        const err = new Error('The `tags` is not valid');
-        err.status = 400;
-        return next(err);
-      }
-      return  Note.create(newNote);
+  Promise.all([
+    validateFolderId(folderId, userId),
+    validateTagIds(tags, userId)
+  ])
+    .then( () => {
+      return Note.create(newNote);
     })
     .then(result => {
       res.location(`${req.originalUrl}/${result.id}`).status(201).json(result);
@@ -145,6 +173,41 @@ router.post('/', (req, res, next) => {
     .catch(err => {
       next(err);
     });
+
+  // validateFolderId(folderId, userId)
+  //   .then( () => {
+  //     return Note.create(newNote);
+  //   })
+  //   .then(result => {
+  //     res.location(`${req.originalUrl}/${result.id}`).status(201).json(result);
+  //   })
+  //   .catch(err => {
+  //     next(err);
+  //   });
+
+  // Folder.countDocuments({ _id: folderId, userId }) //make sure the folderId is from user by checking the count of the array 
+  //   .then(count => {
+  //     if (count === 0 && !folderId) {
+  //       const err = new Error('The `folderId` is not valid');
+  //       err.status = 400;
+  //       return Promise.reject(err);
+  // //     }
+  //     return Tag.countDocuments({ _id: tags, userId });
+  //   })
+  //   .then(count => {
+  //     if (count === 0) {
+  //       const err = new Error('The `tags` is not valid');
+  //       err.status = 400;
+  //       return next(err);
+  //     }
+  //     return Note.create(newNote);
+  //   })
+  //   .then(result => {
+  //     res.location(`${req.originalUrl}/${result.id}`).status(201).json(result);
+  //   })
+  //   .catch(err => {
+  //     next(err);
+  //   });
 
 });
 
@@ -154,6 +217,7 @@ router.put('/:id', (req, res, next) => {
   // const { id, tags, folderId } = req.params;
   const { id } = req.params;
   const userId = req.user.id;
+  const { folderId, tags } = req.body;
 
   const toUpdate = {};
   const updateableFields = ['title', 'content', 'folderId', 'tags'];
@@ -177,31 +241,32 @@ router.put('/:id', (req, res, next) => {
     return next(err);
   }
 
-  if (toUpdate.folderId && !mongoose.Types.ObjectId.isValid(toUpdate.folderId)) {
-    const err = new Error('The `folderId` is not valid');
-    err.status = 400;
-    return next(err);
-  }
+  //moved all to validatetags and validatefolder
+  // if (toUpdate.folderId === '') {
+  //   delete toUpdate.folderId;
+  //   toUpdate.$unset = {folderId : 1};
+  // }
 
-  if (!Array.isArray(toUpdate.tags)) {
-    const err = new Error('The `tags` property must be an array');
-    err.status = 400;
-    return next(err);
-  }
+  // if (toUpdate.folderId && !mongoose.Types.ObjectId.isValid(toUpdate.folderId)) {
+  //   const err = new Error('The `folderId` is not valid');
+  //   err.status = 400;
+  //   return next(err);
+  // }
 
-  if (toUpdate.tags) {
-    const badIds = toUpdate.tags.filter((tag) => !mongoose.Types.ObjectId.isValid(tag));
-    if (badIds.length) {
-      const err = new Error('The `tags` array contains an invalid `id`');
-      err.status = 400;
-      return next(err);
-    }
-  }
+  // if (!Array.isArray(toUpdate.tags)) {
+  //   const err = new Error('The `tags` property must be an array');
+  //   err.status = 400;
+  //   return next(err);
+  // }
 
-  if (toUpdate.folderId === '') {
-    delete toUpdate.folderId;
-    toUpdate.$unset = {folderId : 1};
-  }
+  // if (toUpdate.tags) {
+  //   const badIds = toUpdate.tags.filter((tag) => !mongoose.Types.ObjectId.isValid(tag));
+  //   if (badIds.length) {
+  //     const err = new Error('The `tags` array contains an invalid `id`');
+  //     err.status = 400;
+  //     return next(err);
+  //   }
+  // }
 
   // Note.findOneAndUpdate({ _id : id, userId }, toUpdate, { new: true })
   //   .then(result => {
@@ -215,21 +280,11 @@ router.put('/:id', (req, res, next) => {
   //     next(err);
   //   });
 
-  Folder.countDocuments({ _id: toUpdate.folderId, userId }) 
-    .then(count => {
-      if (count === 0) {
-        const err = new Error('The `folderId` is not valid');
-        err.status = 400;
-        return next(err);
-      }
-      return Tag.countDocuments({ _id: toUpdate.tags, userId });
-    })
-    .then(count => {
-      if (count === 0) {
-        const err = new Error('The `tags` is not valid');
-        err.status = 400;
-        return next(err);
-      }
+  Promise.all([
+    validateFolderId(folderId, userId),
+    validateTagIds(tags, userId)
+  ])
+    .then( () => {
       return  Note.findOneAndUpdate({ _id: id, userId}, toUpdate, { new : true });
     })
     .then(result => {
@@ -238,6 +293,30 @@ router.put('/:id', (req, res, next) => {
     .catch(err => {
       next(err);
     });
+
+  // Folder.countDocuments({ _id: toUpdate.folderId, userId }) 
+  //   .then(count => {
+  //     if (count === 0) {
+  //       const err = new Error('The `folderId` is not valid');
+  //       err.status = 400;
+  //       return next(err);
+  //     }
+  //     return Tag.countDocuments({ _id: toUpdate.tags, userId });
+  //   })
+  //   .then(count => {
+  //     if (count === 0) {
+  //       const err = new Error('The `tags` is not valid');
+  //       err.status = 400;
+  //       return next(err);
+  //     }
+  //     return  Note.findOneAndUpdate({ _id: id, userId}, toUpdate, { new : true });
+  //   })
+  //   .then(result => {
+  //     res.json(result);
+  //   })
+  //   .catch(err => {
+  //     next(err);
+  //   });
 });
 
 /* ========== DELETE/REMOVE A SINGLE ITEM ========== */
