@@ -13,31 +13,31 @@ const expect = chai.expect;
 
 chai.use(chaiHttp);
 
-describe('Noteful API - Users', function () {
+describe('Noteful API - Users', () => {
   const username = 'exampleUser';
   const password = 'examplePass';
   const fullname = 'Example User';
 
-  before(function () {
+  before( () => {
     return mongoose.connect(TEST_MONGODB_URI, { useNewUrlParser: true, useCreateIndex : true })
       .then(() => User.deleteMany());
   });
 
-  beforeEach(function () {
+  beforeEach( () => {
     return User.createIndexes();
   });
 
-  afterEach(function () {
+  afterEach( () => {
     return User.deleteMany();
   });
 
-  after(function () {
+  after( () => {
     return mongoose.disconnect();
   });
 
-  describe('POST /api/users', function () {
+  describe('POST /api/users', () => {
 
-    it('Should create a new user', function () {
+    it('Should create a new user', () => {
       let res;
       return chai
         .request(app)
@@ -116,7 +116,7 @@ describe('Noteful API - Users', function () {
         });
     });
   
-    it('Should reject users with non-string username', function () {
+    it('Should reject users with non-string username', () => {
       return chai
         .request(app)
         .post('/api/users')
@@ -143,7 +143,7 @@ describe('Noteful API - Users', function () {
         });
     });
 
-    it('Should reject users with non-string password', function () {
+    it('Should reject users with non-string password', () => {
       return chai
         .request(app)
         .post('/api/users')
@@ -170,9 +170,55 @@ describe('Noteful API - Users', function () {
         });
     });
 
-    // it('Should reject users with non-trimmed username');
-    // it('Should reject users with non-trimmed password');
-    // it('Should reject users with empty username');
+    it('Should reject users with non-trimmed username', () => {
+      return chai
+        .request(app)
+        .post('/api/users')
+        .send({
+          username: ` ${username} `,
+          password,
+          fullname
+        })
+        .then( res => {
+          //because of the new mocha/chai update, .fail doesn't work anymore
+          // expect.fail(` ${username} `, `${username}`, 'Request should not succeed on non-trimmed username')
+
+          expect(res).to.have.status(422);
+          expect(res.body.message).to.equal('The field: username cannot start or end with a whitespace');
+        });
+    });
+
+    it('Should reject users with non-trimmed password', () => {
+      return chai
+        .request(app)
+        .post('/api/users')
+        .send({
+          username,
+          password: ` ${password} `,
+          fullname
+        })
+        .then( res => {
+          expect(res).to.have.status(422);
+          expect(res.body.message).to.equal('The field: password cannot start or end with a whitespace');
+        });
+    });
+
+    it('Should reject users with empty username', () => {
+      return chai
+        .request(app)
+        .post('/api/users')
+        .send({
+          username: '',
+          password,
+          fullname
+        })
+        .then( res => {
+          expect(res).to.have.status(422);
+          expect(res.body.reason).to.equal('ValidationError');
+          expect(res.body.message).to.equal('Must be at least 1 characters long');
+          expect(res.body.location).to.equal('username');
+        });
+    });
     // it('Should reject users with password less than 8 characters');
     // it('Should reject users with password greater than 72 characters');
     // it('Should reject users with duplicate username');

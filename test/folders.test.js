@@ -5,11 +5,15 @@
 // const mongoose = require('mongoose');
 // const express = require('express');
 // const sinon = require('sinon');
+// const jwt= require('jsonwebtoken');
+// const { JWT_SECRET, JWT_EXPIRY } = require('../config');
 
 // const app = require('../server');
 // const Folder = require('../models/folder');
 // const Note = require('../models/note');
-// const { folders, notes } = require('../db/data');
+// const User = require('../models/user');
+
+// const { folders, notes, users } = require('../db/data');
 // const { TEST_MONGODB_URI } = require('../config');
 
 // chai.use(chaiHttp);
@@ -17,30 +21,52 @@
 // const sandbox = sinon.createSandbox();
 
 // describe('Noteful API - Folders', function () {
-
+  
+//   //set token at higher scope 
+//   let token;
+//   let user;
+//   //connect to db, blow away the db
 //   before(function () {
 //     return mongoose.connect(TEST_MONGODB_URI, { useNewUrlParser: true })
 //       .then(() => Promise.all([
+//         User.deleteMany(),
 //         Note.deleteMany(),
 //         Folder.deleteMany()
 //       ]));
 //   });
 
+//   //insert some notes before test
 //   beforeEach(function () {
 //     return Promise.all([
+//       User.insertMany(users),
 //       Folder.insertMany(folders),
 //       Note.insertMany(notes)
-//     ]);
+//     ])
+//       .then((results) => {
+//         // const user = users[0];
+//         // token = jwt.sign( { user }, JWT_SECRET, { subject : user.username });
+//         const userResults = results[0];
+//         user = userResults[0];
+//         console.log(user);
+//         token =  jwt.sign( { user }, JWT_SECRET, {
+//           subject: user.username,
+//           expiresIn: JWT_EXPIRY
+//         });
+//         console.log(token);
+//       });
 //   });
 
+//   //delete again
 //   afterEach(function () {
 //     sandbox.restore();
 //     return Promise.all([
 //       Note.deleteMany(), 
-//       Folder.deleteMany()
+//       Folder.deleteMany(),
+//       User.deleteMany()
 //     ]);
 //   });
 
+//   //after test, disconnect 
 //   after(function () {
 //     return mongoose.disconnect();
 //   });
@@ -94,20 +120,21 @@
 
 //   });
 
-//   describe('GET /api/folders/:id', function () {
+//   describe.only('GET /api/folders/:id', function () {
 
-//     it('should return correct folder', function () {
+//     it.only('should return correct folder', function () {
 //       let data;
-//       return Folder.findOne()
+//       return Folder.findOne({ userId: user.id }) //find a note that is from the same user with the same jwt from before
 //         .then(_data => {
 //           data = _data;
-//           return chai.request(app).get(`/api/folders/${data.id}`);
+//           return chai.request(app).get(`/api/folders/${data.id}`)
+//             .set('Authorization', `Bearer ${token}}`); //set is the same POSTMAN 
 //         })
 //         .then((res) => {
 //           expect(res).to.have.status(200);
 //           expect(res).to.be.json;
 //           expect(res.body).to.be.an('object');
-//           expect(res.body).to.have.all.keys('id', 'name', 'createdAt', 'updatedAt');
+//           expect(res.body).to.have.all.keys('id', 'name', 'createdAt', 'updatedAt', 'userId');
 //           expect(res.body.id).to.equal(data.id);
 //           expect(res.body.name).to.equal(data.name);
 //           expect(new Date(res.body.createdAt)).to.eql(data.createdAt);

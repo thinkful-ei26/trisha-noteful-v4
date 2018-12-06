@@ -73,6 +73,8 @@ router.get('/:id', (req, res, next) => {
     });
 });
 
+/* ========== folderId & tags validation - helper fns ========== */
+
 //folderId = invalid
 //folderId = "" (empty string)
 //folderId = valid mongo _id but does not exist
