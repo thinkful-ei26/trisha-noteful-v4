@@ -236,8 +236,40 @@ describe('Noteful API - Users', () => {
           expect(res.body.location).to.equal('password');
         });
     });
-    // it('Should reject users with password greater than 72 characters');
-    // it('Should reject users with duplicate username');
+
+    it('Should reject users with password greater than 72 characters', () => {
+      return chai
+        .request(app)
+        .post('/api/users')
+        .send({
+          username,
+          password: 'zpQD5eZeiNjlgGcy27Yj83X6qtG2g82gcZB1w7uF83X6qtG2g82gcZB1w7uFrtghyredtgere85',
+          fullname
+        })
+        .then( res => {
+          expect(res).to.have.status(422);
+          expect(res.body.reason).to.equal('ValidationError');
+          expect(res.body.message).to.equal('Must be at most 72 characters long');
+          expect(res.body.location).to.equal('password');
+        });
+    });
+    it('Should reject users with duplicate username', () => {
+      return User.create({
+        username,
+        password,
+        fullname
+      })
+        .then( () => {
+          return chai
+            .request(app)
+            .post('/api/users')
+            .send({ username, password, fullname });
+        })
+        .then( res => {
+          expect(res).to.have.status(400);
+          expect(res.body.message).to.equal('The username already exists');
+        });
+    });
     // it('Should trim fullname');
     //   it('Should reject users with non-string first name'
   
