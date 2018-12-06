@@ -153,6 +153,8 @@ router.post('/', (req, res, next) => {
 
   const newNote = { title, content, folderId, tags, userId };
 
+  /* You're going to repeat similar validations on POST and PUT enpoints, just create a seperate fn so you can re-use it. remember we are lazy (DRY) */
+
   //use promise all instead of chaining .then() for readability
   Promise.all([
     validateFolderId(folderId, userId),
@@ -167,47 +169,6 @@ router.post('/', (req, res, next) => {
     .catch(err => {
       next(err);
     });
-
-  /* You're going to repeat similar validations on POST and PUT enpoints, just create a seperate fn so you can re-use it. remember we are lazy (DRY) */
-
-  /* solution from thu, 12/5/18 - folders only */
-  // validateFolderId(folderId, userId)
-  //   .then( () => {
-  //     return Note.create(newNote);
-  //   })
-  //   .then(result => {
-  //     res.location(`${req.originalUrl}/${result.id}`).status(201).json(result);
-  //   })
-  //   .catch(err => {
-  //     next(err);
-  //   });
-
-  /* solution from wed, 12/5/18 */
-
-  // Folder.countDocuments({ _id: folderId, userId }) //make sure the folderId is from user by checking the count of the array 
-  //   .then(count => {
-  //     if (count === 0 && !folderId) {
-  //       const err = new Error('The `folderId` is not valid');
-  //       err.status = 400;
-  //       return Promise.reject(err);
-  // //     }
-  //     return Tag.countDocuments({ _id: tags, userId });
-  //   })
-  //   .then(count => {
-  //     if (count === 0) {
-  //       const err = new Error('The `tags` is not valid');
-  //       err.status = 400;
-  //       return next(err);
-  //     }
-  //     return Note.create(newNote);
-  //   })
-  //   .then(result => {
-  //     res.location(`${req.originalUrl}/${result.id}`).status(201).json(result);
-  //   })
-  //   .catch(err => {
-  //     next(err);
-  //   });
-
 });
 
 /* ========== PUT/UPDATE A SINGLE ITEM ========== */
@@ -254,7 +215,7 @@ router.put('/:id', (req, res, next) => {
     .catch(err => {
       next(err);
     });
-    
+
 });
 
 /* ========== DELETE/REMOVE A SINGLE ITEM ========== */
