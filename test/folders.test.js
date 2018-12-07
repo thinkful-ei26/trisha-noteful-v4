@@ -355,7 +355,7 @@ describe('Noteful API - Folders', () => {
     it('should return an error when missing "name" field', () => {
       const updateItem = {};
       let data;
-      return Folder.findOneAndUpdate({ user: user.id })
+      return Folder.findOneAndUpdate({ userId: user.id })
         .then(_data => {
           data = _data;
           return chai
@@ -376,7 +376,7 @@ describe('Noteful API - Folders', () => {
     it('should return an error when "name" field is empty string', () => {
       const updateItem = { name: '' };
       let data;
-      return Folder.findOneAndUpdate({ user: user.id })
+      return Folder.findOneAndUpdate({ userId: user.id })
         .then(_data => {
           data = _data;
           return chai.request(app)
@@ -393,17 +393,19 @@ describe('Noteful API - Folders', () => {
         });
     });
 
-    it.only('should return an error when given a duplicate name', () => {
-      return Folder.find({ user: user.id }).limit(2)
+    it('should return an error when given a duplicate name', () => {
+      return Folder.find({ userId: user.id }).limit(2)
         .then(results => {
-          console.log(results);
+          // console.log(results); //should be an array of 2 folders
           const [item1, item2] = results;
           item1.name = item2.name;
           return chai.request(app)
             .put(`/api/folders/${item1.id}`)
+            .set('Authorization', `Bearer ${token}`)
             .send(item1);
         })
         .then(res => {
+          // console.log(res.body);
           expect(res).to.have.status(400);
           expect(res).to.be.json;
           expect(res.body).to.be.a('object');
@@ -412,14 +414,21 @@ describe('Noteful API - Folders', () => {
     });
 
     it('should catch errors and respond properly', () => {
-      sandbox.stub(Folder.schema.options.toObject, 'transform').throws('FakeError');
+      //let's grab the res.json(results) and give it bad information
+      const badInfo = sandbox.stub(Folder.schema.options.toJSON, 'transform').throws('FakeError');
+      // console.log(s);
+
+      //alternatively, you could just feed Folder.findOneAndUpdate hardcoded badinfo
 
       const updateItem = { name: 'Updated Name' };
       let data;
-      return Folder.findOne()
+      return Folder.findOneAndUpdate({badInfo})
         .then(_data => {
           data = _data;
-          return chai.request(app).put(`/api/folders/${data.id}`).send(updateItem);
+          return chai.request(app)
+            .put(`/api/folders/${data.id}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send(updateItem);
         })
         .then(res => {
           expect(res).to.have.status(500);
