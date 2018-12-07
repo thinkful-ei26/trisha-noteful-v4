@@ -93,6 +93,8 @@ describe('Noteful API - Folders', () => {
           .set('Authorization', `Bearer ${token}`)
       ])
         .then(([data, res]) => {
+          // console.log('this is data', data);
+          // console.log('this is res', res.body);
           expect(res).to.have.status(200);
           expect(res).to.be.json;
           expect(res.body).to.be.a('array');
@@ -142,7 +144,7 @@ describe('Noteful API - Folders', () => {
 
   describe('GET /api/folders/:id', () => {
 
-    it.only('should return correct folder', () => {
+    it('should return correct folder', () => {
       let data;
       return Folder.findOne({ userId: user.id }) //find a note that is from the same user with the same jwt from before
         .then(_data => {
