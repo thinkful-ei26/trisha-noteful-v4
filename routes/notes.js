@@ -124,6 +124,8 @@ const validateTagIds = (tags, userId) => {
     return Promise.reject(err);
   }
 
+  //i don't have a duplicate name validation on validateTags, the duplicate name is being handled on routes/tags.js in POST req
+
   return Tag.countDocuments({
     $and: [ {
       _id: { $in: tags },

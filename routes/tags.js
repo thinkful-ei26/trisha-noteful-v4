@@ -65,6 +65,8 @@ router.post('/', (req, res, next) => {
     return next(err);
   }
 
+  //to test for duplicate tag name, alternatively you can find all the tags from that user, do a count to see if there's an existing tag with the same name
+
   Tag.create(newTag)
     .then(result => {
       res.location(`${req.originalUrl}/${result.id}`).status(201).json(result);
