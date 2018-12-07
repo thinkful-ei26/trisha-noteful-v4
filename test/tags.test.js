@@ -309,7 +309,7 @@ describe('Noteful API - Tags', () => {
 
   });
 
-  describe.only('PUT /api/tags/:id', () => {
+  describe('PUT /api/tags/:id', () => {
 
     it('should update the tag', () => {
       const updateItem = { name: 'Updated Name' };

@@ -186,10 +186,10 @@ describe('Noteful API - Folders', () => {
     });
 
     it('should catch errors and respond properly', () => {
-      sandbox.stub(Folder.schema.options.toObject, 'transform').throws('FakeError');
+      sandbox.stub(Folder.schema.options.toJSON, 'transform').throws('FakeError');
 
       let data;
-      return Folder.findOne()
+      return Folder.findOne({ userId: user.id })
         .then(_data => {
           data = _data;
           return chai.request(app)
@@ -212,7 +212,7 @@ describe('Noteful API - Folders', () => {
       const newItem = { name: 'newFolder' };
       
       //body is response body of the newnote you will create on every post
-      let folder;
+      let body;
       return chai.request(app)
         .post('/api/folders')
         .set('Authorization', `Bearer ${token}`)
@@ -220,20 +220,20 @@ describe('Noteful API - Folders', () => {
         .then( res => {
           // console.log(res.body);
           //grab one folder from the array of folders
-          folder = res.body[0];
+          body = res.body;
           expect(res).to.have.status(201);
           expect(res).to.have.header('location');
           expect(res).to.be.json;
-          expect(folder).to.be.an('object');
-          expect(folder).to.have.all.keys('id', 'name', 'createdAt', 'updatedAt', 'userId' ); 
+          expect(body).to.be.an('object');
+          expect(body).to.have.all.keys('id', 'name', 'createdAt', 'updatedAt', 'userId' ); 
           //if validation passes, we've created a new folder, find one then test it
-          return Folder.findOne({ _id: folder.id, userId: user.id });
+          return Folder.findOne({ _id: body.id, userId: user.id });
         })
         .then(data => {
-          expect(folder.id).to.equal(data.id);
-          expect(folder.name).to.equal(data.name);
-          expect(new Date(folder.createdAt)).to.eql(data.createdAt);
-          expect(new Date(folder.updatedAt)).to.eql(data.updatedAt);
+          expect(body.id).to.equal(data.id);
+          expect(body.name).to.equal(data.name);
+          expect(new Date(body.createdAt)).to.eql(data.createdAt);
+          expect(new Date(body.updatedAt)).to.eql(data.updatedAt);
         });
     });
 
@@ -265,7 +265,7 @@ describe('Noteful API - Folders', () => {
         });
     });
 
-    it.only('should return an error when given a duplicate name', () => {
+    it('should return an error when given a duplicate name', () => {
       return Folder.findOne({ userId: user.id })
         .then(data => {
           const newItem = { name: data.name };
@@ -283,7 +283,7 @@ describe('Noteful API - Folders', () => {
     });
 
     it('should catch errors and respond properly', () => {
-      sandbox.stub(Folder.schema.options.toObject, 'transform').throws('FakeError');
+      sandbox.stub(Folder.schema.options.toJSON, 'transform').throws('FakeError');
 
       const newItem = { name: 'newFolder' };
       return chai.request(app)
@@ -387,7 +387,7 @@ describe('Noteful API - Folders', () => {
             .send(updateItem);
         })
         .then(res => {
-          console.log(res.body);
+          // console.log(res.body);
           expect(res).to.have.status(400);
           expect(res).to.be.json;
           expect(res.body).to.be.a('object');
@@ -503,13 +503,13 @@ describe('Noteful API - Folders', () => {
         });
     });
 
-    it.only('should catch errors and respond properly', () => {
+    it('should catch errors and respond properly', () => {
       
       //we've got this badData res.json(results), feed error-inducing badData to test if our error messages is working
-      const badData = sandbox.stub(express.response, 'sendStatus').throws('FakeError');
+      sandbox.stub(express.response, 'sendStatus').throws('FakeError');
       // console.log(badData);
 
-      return Folder.findOneAndRemove({ badData })
+      return Folder.findOneAndRemove({ userId: user.id })
         .then(data => {
           return chai
             .request(app)
