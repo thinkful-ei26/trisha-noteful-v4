@@ -19,7 +19,7 @@ const Folder = require('../models/folder');
 const Note = require('../models/note');
 const User = require('../models/user');
 
-const { folders, notes, tags, users } = require('../db/data');
+const { folders, notes, users } = require('../db/data');
 const { TEST_MONGODB_URI } = require('../config');
 
 //mount chai http so you can use it
@@ -61,7 +61,6 @@ describe('Noteful API - Folders', () => {
           subject: user.username,
           expiresIn: JWT_EXPIRY
         });
-        return token; // is this needed?
       });
   });
 
@@ -89,7 +88,7 @@ describe('Noteful API - Folders', () => {
       return Promise.all([
         Folder.find({ userId: user.id})
           .sort('name'),
-        chai.request(app)
+        chai.request(app) //to use chai http's live integration testing , you need to make a call to the app or url. request.app will open the server for incoming 
           .get('/api/folders')
           .set('Authorization', `Bearer ${token}`)
       ])
@@ -125,11 +124,8 @@ describe('Noteful API - Folders', () => {
         });
     });
 
-    it.only('should catch errors and respond properly', () => {
-      //sandbox.stub should throw an error, it's returning undefined
-      const stub = sandbox.stub(Folder.schema.options.toJSON, 'transform').throws('FakeError');
-
-      console.log(stub);
+    it('should catch errors and respond properly', () => {
+      sandbox.stub(Folder.schema.options.toJSON, 'transform').throws('FakeError');
 
       return chai.request(app)
         .get('/api/folders')
@@ -307,16 +303,21 @@ describe('Noteful API - Folders', () => {
     it('should update the folder', () => {
       const updateItem = { name: 'Updated Name' };
       let data;
-      return Folder.findOne()
+      return Folder.findOneAndUpdate({ userId: user.id }) 
         .then(_data => {
           data = _data;
-          return chai.request(app).put(`/api/folders/${data.id}`).send(updateItem);
+          return chai.request(app)
+            .put(`/api/folders/${data.id}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send(updateItem);
         })
         .then( res => {
+          // console.log('res.body: ', res.body);
+          // console.log('data.id: ', data.id);
           expect(res).to.have.status(200);
           expect(res).to.be.json;
           expect(res.body).to.be.a('object');
-          expect(res.body).to.have.all.keys('id', 'name', 'createdAt', 'updatedAt');
+          expect(res.body).to.have.all.keys('name', 'userId', 'createdAt', 'updatedAt', 'id');
           expect(res.body.id).to.equal(data.id);
           expect(res.body.name).to.equal(updateItem.name);
           expect(new Date(res.body.createdAt)).to.eql(data.createdAt);
@@ -327,8 +328,10 @@ describe('Noteful API - Folders', () => {
 
     it('should respond with a 400 for an invalid id', () => {
       const updateItem = { name: 'Blah' };
-      return chai.request(app)
+      return chai
+        .request(app)
         .put('/api/folders/NOT-A-VALID-ID')
+        .set('Authorization', `Bearer ${token}`)
         .send(updateItem)
         .then(res => {
           expect(res).to.have.status(400);
@@ -339,8 +342,10 @@ describe('Noteful API - Folders', () => {
     it('should respond with a 404 for an id that does not exist', () => {
       const updateItem = { name: 'Blah' };
       // The string "DOESNOTEXIST" is 12 bytes which is a valid Mongo ObjectId
-      return chai.request(app)
+      return chai
+        .request(app)
         .put('/api/folders/DOESNOTEXIST')
+        .set('Authorization', `Bearer ${token}`)
         .send(updateItem)
         .then(res => {
           expect(res).to.have.status(404);
@@ -350,12 +355,17 @@ describe('Noteful API - Folders', () => {
     it('should return an error when missing "name" field', () => {
       const updateItem = {};
       let data;
-      return Folder.findOne()
+      return Folder.findOneAndUpdate({ user: user.id })
         .then(_data => {
           data = _data;
-          return chai.request(app).put(`/api/folders/${data.id}`).send(updateItem);
+          return chai
+            .request(app)
+            .put(`/api/folders/${data.id}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send(updateItem);
         })
         .then(res => {
+          // console.log(res.body);
           expect(res).to.have.status(400);
           expect(res).to.be.json;
           expect(res.body).to.be.a('object');
@@ -366,14 +376,16 @@ describe('Noteful API - Folders', () => {
     it('should return an error when "name" field is empty string', () => {
       const updateItem = { name: '' };
       let data;
-      return Folder.findOne()
+      return Folder.findOneAndUpdate({ user: user.id })
         .then(_data => {
           data = _data;
           return chai.request(app)
             .put(`/api/folders/${data.id}`)
+            .set('Authorization', `Bearer ${token}`)
             .send(updateItem);
         })
         .then(res => {
+          console.log(res.body);
           expect(res).to.have.status(400);
           expect(res).to.be.json;
           expect(res.body).to.be.a('object');
