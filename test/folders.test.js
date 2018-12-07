@@ -444,15 +444,18 @@ describe('Noteful API - Folders', () => {
 
     it('should delete an existing folder and respond with 204', () => {
       let data;
-      return Folder.findOne()
+      return Folder.findOneAndRemove({ userId: user.id })
         .then(_data => {
           data = _data;
-          return chai.request(app).delete(`/api/folders/${data.id}`);
+          // console.log('this is data',data);
+          return chai.request(app)
+            .delete(`/api/folders/${data.id}`)
+            .set('Authorization', `Bearer ${token}`);
         })
-        .then(function (res) {
+        .then( res => {
           expect(res).to.have.status(204);
           expect(res.body).to.be.empty;
-          return Folder.count({ _id: data.id });
+          return Folder.countDocuments({ _id: data.id });
         })
         .then(count => {
           expect(count).to.equal(0);
@@ -461,36 +464,55 @@ describe('Noteful API - Folders', () => {
 
     it('should delete an existing folder and remove folderId reference from note', () => {
       let folderId;
-      return Note.findOne({ folderId: { $exists: true } })
+      //find a one note with a folderId that has an existing value
+      //AND belonging to the correct user 
+      return Note.findOne({ 
+        $and: [ 
+          { folderId: { $exists: true } }, 
+          { userId: user.id } 
+        ] 
+      }) 
         .then(data => {
+          // console.log(data);
           folderId = data.folderId;
           return chai.request(app)
-            .delete(`/api/folders/${folderId}`);
+            .delete(`/api/folders/${folderId}`)
+            .set('Authorization', `Bearer ${token}`);
         })
-        .then(function (res) {
+        .then(res => {
           expect(res).to.have.status(204);
           expect(res.body).to.be.empty;
-          return Note.count({ folderId });
+          return Note.countDocuments({ folderId });
         })
         .then(count => {
           expect(count).to.equal(0);
         });
     });
 
-    it('should respond with a 400 for an invalid id', function () {
-      return chai.request(app)
+    it('should respond with a 400 for an invalid id', () => {
+      return chai
+        .request(app)
         .delete('/api/folders/NOT-A-VALID-ID')
+        .set('Authorization', `Bearer ${token}`)
         .then(res => {
+          // console.log(res.body);
           expect(res).to.have.status(400);
           expect(res.body.message).to.equal('The `id` is not valid');
         });
     });
 
-    it('should catch errors and respond properly', function () {
-      sandbox.stub(express.response, 'sendStatus').throws('FakeError');
-      return Folder.findOne()
+    it.only('should catch errors and respond properly', () => {
+      
+      //we've got this badData res.json(results), feed error-inducing badData to test if our error messages is working
+      const badData = sandbox.stub(express.response, 'sendStatus').throws('FakeError');
+      // console.log(badData);
+
+      return Folder.findOneAndRemove({ badData })
         .then(data => {
-          return chai.request(app).delete(`/api/folders/${data.id}`);
+          return chai
+            .request(app)
+            .delete(`/api/folders/${data.id}`)
+            .set('Authorization', `Bearer ${token}`);
         })
         .then(res => {
           expect(res).to.have.status(500);
