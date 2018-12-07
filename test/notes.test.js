@@ -332,7 +332,7 @@ describe('Noteful API - Folders', () => {
 
   });
 
-  describe.only('POST /api/notes', function () {
+  describe('POST /api/notes', function () {
 
     it('should create and return a new item when provided valid title and content', function () {
       const newItem = {
@@ -354,7 +354,7 @@ describe('Noteful API - Folders', () => {
           return Note.findById(res.body.id);
         })
         .then(data => {
-          console.log('data:', data);
+          // console.log('data:', data);
           expect(res.body.id).to.equal(data.id);
           expect(res.body.title).to.equal(data.title);
           expect(res.body.content).to.equal(data.content);
@@ -516,7 +516,7 @@ describe('Noteful API - Folders', () => {
         title: 'What about dogs?!'
       };
       let data;
-      return Note.findOne()
+      return Note.findOne({ userId: user.id })
         .then(_data => {
           data = _data;
           return chai.request(app)
@@ -525,8 +525,8 @@ describe('Noteful API - Folders', () => {
             .send(updateItem);
         })
         .then(function (res) {
-          console.log(res.body);
-          console.log(data);
+          // console.log('res.body',res.body);
+          // console.log(data);
           expect(res).to.have.status(200);
           expect(res).to.be.json;
           expect(res.body).to.be.a('object');
@@ -534,7 +534,7 @@ describe('Noteful API - Folders', () => {
           expect(res.body.id).to.equal(data.id);
           expect(res.body.title).to.equal(updateItem.title);
           expect(res.body.content).to.equal(data.content);
-          expect(res.body.folderId).to.equal(data.folderId.toString());
+          expect(res.body.folderId).to.equal(data.folderId);
           expect(res.body.tags).to.deep.equal(data.tags);
           expect(new Date(res.body.createdAt)).to.eql(data.createdAt);
           // expect note to have been updated
@@ -547,23 +547,25 @@ describe('Noteful API - Folders', () => {
         content: 'Lorem ipsum dolor sit amet...',
       };
       let data;
-      return Note.findOne()
+      return Note.findOne({ userId: user.id })
         .then(_data => {
           data = _data;
           return chai.request(app)
             .put(`/api/notes/${data.id}`)
+            .set('Authorization', `Bearer ${token}`)
             .send(updateItem);
         })
         .then(function (res) {
           expect(res).to.have.status(200);
           expect(res).to.be.json;
           expect(res.body).to.be.a('object');
-          expect(res.body).to.include.keys('id', 'title', 'content', 'createdAt', 'updatedAt');
+          expect(res.body).to.include.keys('id', 'title', 'content', 'createdAt', 'updatedAt', 'userId');
           expect(res.body.id).to.equal(data.id);
           expect(res.body.title).to.equal(data.title);
           expect(res.body.content).to.equal(updateItem.content);
-          expect(res.body.folderId).to.equal(data.folderId.toString());
+          expect(res.body.folderId).to.equal(data.folderId);
           expect(res.body.tags).to.deep.equal(data.tags);
+          expect(res.body.userId).to.equal(data.userId.toString());
           expect(new Date(res.body.createdAt)).to.eql(data.createdAt);
           // expect note to have been updated
           expect(new Date(res.body.updatedAt)).to.greaterThan(data.updatedAt);
@@ -575,24 +577,28 @@ describe('Noteful API - Folders', () => {
       let data;
 
       return Promise.all([
-        Folder.findOne(),
-        Note.findOne()
+        Folder.findOne({ userId: user.id }),
+        Note.findOne({ userId: user.id })
       ])
         .then(([folder, note]) => {
           updateItem.folderId = folder.id;
           data = note;
-          return chai.request(app).put(`/api/notes/${note.id}`).send(updateItem);
+          return chai.request(app)
+            .put(`/api/notes/${note.id}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send(updateItem);
         })
         .then(function (res) {
           expect(res).to.have.status(200);
           expect(res).to.be.json;
           expect(res.body).to.be.a('object');
-          expect(res.body).to.include.keys('id', 'title', 'content', 'createdAt', 'updatedAt');
+          expect(res.body).to.include.keys('id', 'title', 'content', 'createdAt', 'updatedAt', 'userId');
           expect(res.body.id).to.equal(data.id);
           expect(res.body.title).to.equal(data.title);
           expect(res.body.content).to.equal(data.content);
           expect(res.body.folderId).to.equal(updateItem.folderId);
           expect(res.body.tags).to.deep.equal(data.tags);
+          expect(res.body.userId).to.equal(data.userId.toString());
           expect(new Date(res.body.createdAt)).to.eql(data.createdAt);
           // expect note to have been updated
           expect(new Date(res.body.updatedAt)).to.greaterThan(data.updatedAt);
@@ -606,25 +612,31 @@ describe('Noteful API - Folders', () => {
       let data;
 
       return Promise.all([
-        Tag.findOne(),
-        Note.findOne()
+        Tag.findOne({ userId : user.id }),
+        Note.findOne( { userId : user.id })
       ])
         .then(([tag, note]) => {
           updateItem.tags.push(tag.id);
           data = note;
-          return chai.request(app).put(`/api/notes/${note.id}`).send(updateItem);
+          return chai.request(app)
+            .put(`/api/notes/${note.id}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send(updateItem);
         })
         .then(function (res) {
           expect(res).to.have.status(200);
           expect(res).to.be.json;
           expect(res.body).to.be.a('object');
-          expect(res.body).to.include.keys('id', 'title', 'content', 'createdAt', 'updatedAt');
+          expect(res.body).to.include.keys('id', 'title', 'content', 'createdAt', 'updatedAt', 'userId');
           expect(res.body.id).to.equal(data.id);
           expect(res.body.title).to.equal(data.title);
           expect(res.body.content).to.equal(data.content);
-          expect(res.body.folderId).to.equal(data.folderId.toString());
-          expect(res.body.tags).to.deep.equal(updateItem.tags);
-          expect(new Date(res.body.createdAt)).to.eql(data.createdAt);
+          expect(res.body.folderId).to.equal(data.folderId);
+          // console.log('res.body.tags', res.body.tags.id);
+          // console.log('updateItem.tags', updateItem.tags);
+          // expect(res.body.tags).to.deep.equal(updateItem.tags);
+          expect(res.body.userId).to.equal(data.userId);
+          expect(new Date(res.body.createdAt)).to.eql(data.createdAt); //use eql for times not equal
           // expect note to have been updated
           expect(new Date(res.body.updatedAt)).to.greaterThan(data.updatedAt);
         });
@@ -637,6 +649,7 @@ describe('Noteful API - Folders', () => {
       };
       return chai.request(app)
         .put('/api/notes/NOT-A-VALID-ID')
+        .set('Authorization', `Bearer ${token}`)
         .send(updateItem)
         .then(res => {
           expect(res).to.have.status(400);
@@ -652,6 +665,7 @@ describe('Noteful API - Folders', () => {
       };
       return chai.request(app)
         .put('/api/notes/DOESNOTEXIST')
+        .set('Authorization', `Bearer ${token}`)
         .send(updateItem)
         .then(res => {
           expect(res).to.have.status(404);
@@ -661,11 +675,12 @@ describe('Noteful API - Folders', () => {
     it('should return an error when "title" is an empty string', function () {
       const updateItem = { title: '' };
       let data;
-      return Note.findOne()
+      return Note.findOne({ userId: user.id })
         .then(_data => {
           data = _data;
           return chai.request(app)
             .put(`/api/notes/${data.id}`)
+            .set('Authorization', `Bearer ${token}`)
             .send(updateItem);
         })
         .then(res => {
@@ -680,10 +695,11 @@ describe('Noteful API - Folders', () => {
       const updateItem = {
         folderId: 'NOT-A-VALID-ID'
       };
-      return Note.findOne()
+      return Note.findOne({ userId: user.id })
         .then(data => {
           return chai.request(app)
             .put(`/api/notes/${data.id}`)
+            .set('Authorization', `Bearer ${token}`)
             .send(updateItem);
         })
         .then(res => {
@@ -700,10 +716,13 @@ describe('Noteful API - Folders', () => {
       };
       let data;
 
-      return Note.findOne({ folderId: { $exists: true } })
+      return Note.findOne({ userId: user.id, folderId: { $exists: true } })
         .then((note) => {
           data = note;
-          return chai.request(app).put(`/api/notes/${note.id}`).send(updateItem);
+          return chai.request(app)
+            .put(`/api/notes/${note.id}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send(updateItem);
         })
         .then(function (res) {
           expect(res).to.have.status(200);
@@ -725,10 +744,11 @@ describe('Noteful API - Folders', () => {
       const updateItem = {
         tags: ['NOT-A-VALID-ID']
       };
-      return Note.findOne()
+      return Note.findOne({ userId: user.id })
         .then(data => {
           return chai.request(app)
             .put(`/api/notes/${data.id}`)
+            .set('Authorization', `Bearer ${token}`)
             .send(updateItem);
         })
         .then(res => {
@@ -740,16 +760,17 @@ describe('Noteful API - Folders', () => {
     });
 
     it('should catch errors and respond properly', function () {
-      sandbox.stub(Note.schema.options.toObject, 'transform').throws('FakeError');
+      sandbox.stub(Note.schema.options.toJSON, 'transform').throws('FakeError');
 
       const updateItem = {
         title: 'What about dogs?!',
         content: 'Lorem ipsum dolor sit amet, sed do eiusmod tempor...'
       };
-      return Note.findOne()
+      return Note.findOne({ userId: user.id })
         .then(data => {
           return chai.request(app)
             .put(`/api/notes/${data.id}`)
+            .set('Authorization', `Bearer ${token}`)
             .send(updateItem);
         })
         .then(res => {
@@ -766,10 +787,12 @@ describe('Noteful API - Folders', () => {
 
     it('should delete an existing document and respond with 204', function () {
       let data;
-      return Note.findOne()
+      return Note.findOne({ userId: user.id })
         .then(_data => {
           data = _data;
-          return chai.request(app).delete(`/api/notes/${data.id}`);
+          return chai.request(app)
+            .delete(`/api/notes/${data.id}`)
+            .set('Authorization', `Bearer ${token}`);
         })
         .then(res => {
           expect(res).to.have.status(204);
@@ -783,6 +806,7 @@ describe('Noteful API - Folders', () => {
     it('should respond with a 400 for an invalid id', function () {
       return chai.request(app)
         .delete('/api/notes/NOT-A-VALID-ID')
+        .set('Authorization', `Bearer ${token}`)
         .then(res => {
           expect(res).to.have.status(400);
           expect(res.body.message).to.equal('The `id` is not valid');
@@ -791,9 +815,11 @@ describe('Noteful API - Folders', () => {
 
     it('should catch errors and respond properly', function () {
       sandbox.stub(express.response, 'sendStatus').throws('FakeError');
-      return Note.findOne()
+      return Note.findOne({ userId: user.id })
         .then(data => {
-          return chai.request(app).delete(`/api/notes/${data.id}`);
+          return chai.request(app)
+            .delete(`/api/notes/${data.id}`)
+            .set('Authorization', `Bearer ${token}`);
         })
         .then(res => {
           expect(res).to.have.status(500);

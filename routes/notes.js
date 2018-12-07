@@ -180,10 +180,9 @@ router.post('/', (req, res, next) => {
 /* ========== PUT/UPDATE A SINGLE ITEM ========== */
 
 router.put('/:id', (req, res, next) => {
-  // const { id, tags, folderId } = req.params;
   const { id } = req.params;
   const userId = req.user.id;
-  const { folderId, tags } = req.body;
+  // const { folderId, tags } = req.body;
 
   const toUpdate = {};
   const updateableFields = ['title', 'content', 'folderId', 'tags'];
@@ -207,16 +206,26 @@ router.put('/:id', (req, res, next) => {
     return next(err);
   }
 
+  //if folderId is a string, then unset it 
+  if (toUpdate.folderId === '') {
+    delete toUpdate.folderId;
+    toUpdate.$unset = { folderId: 1 };
+  }
+
   //moved all to validatetags and validatefolder to separate fns, then invoke below
   Promise.all([
-    validateFolderId(folderId, userId),
-    validateTagIds(tags, userId)
+    validateFolderId(toUpdate.folderId, userId),
+    validateTagIds(toUpdate.tags, userId)
   ])
     .then( () => {
-      return  Note.findOneAndUpdate({ _id: id, userId}, toUpdate, { new : true });
+      return  Note.findOneAndUpdate({ _id: id, userId}, toUpdate, { new : true }).populate('tags');
     })
     .then(result => {
-      res.json(result);
+      if (result) {
+        res.json(result);
+      } else {
+        next();
+      }
     })
     .catch(err => {
       next(err);
