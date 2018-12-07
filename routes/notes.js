@@ -85,12 +85,11 @@ router.get('/:id', (req, res, next) => {
 
 const validateFolderId = (folderId, userId) => {
   //null, undefined, empty string, negative number
-  if(folderId === '') {
-    const err = new Error('The `folderId` is not valid');
-    err.status = 400;
-    return Promise.reject(err);
+  if(folderId === undefined || folderId === '' ) {
+    return Promise.resolve();
   }
-  if (folderId && !mongoose.Types.ObjectId.isValid(folderId)) {
+
+  if (!mongoose.Types.ObjectId.isValid(folderId)) {
     const err = new Error('The `folderId` is not valid');
     err.status = 400;
     return Promise.reject(err);
@@ -107,7 +106,7 @@ const validateFolderId = (folderId, userId) => {
 
 const validateTagIds = (tags, userId) => {
   //null, undefined, empty string, negative number
-  if(tags === undefined) {
+  if(tags === undefined || tags === '') {
     return Promise.resolve();
   }
   
@@ -155,7 +154,7 @@ router.post('/', (req, res, next) => {
     return next(err);
   }
 
-  const newNote = { title, content, folderId, tags, userId };
+  const newNote = { title, content, userId };
 
   /* You're going to repeat similar validations on POST and PUT enpoints, just create a seperate fn so you can re-use it. remember we are lazy (DRY) */
 
@@ -165,6 +164,9 @@ router.post('/', (req, res, next) => {
     validateTagIds(tags, userId)
   ])
     .then( () => {
+      if (folderId) {
+        newNote.folderId = folderId;
+      }
       return Note.create(newNote);
     })
     .then(result => {
