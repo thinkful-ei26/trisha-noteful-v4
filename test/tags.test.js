@@ -55,8 +55,10 @@ describe('Noteful API - Tags', () => {
     ])
       .then( ([users]) => {
         // console.log('array of users', users);
-        const user = users[0];
-        console.log('this is user1: ', user);
+        user = users[0]; //ran into a problem where I was setting let user in higher scope, then within this scope, I was setting const user = users[0]
+        //so everytime that I ran each test, my code will not look at the higher scope user, so the id is returning undefined
+        /* doesn't matter if you do user._id or user.id, because of the way we wrote the user schema (virtualize) */
+        // console.log('this is user1: ', user);
         token =  jwt.sign( { user }, JWT_SECRET, {
           subject: user.username,
           expiresIn: JWT_EXPIRY
@@ -84,7 +86,7 @@ describe('Noteful API - Tags', () => {
 
     it.only('should return the correct number of tags', () => {
       return Promise.all([
-        Tag.find({ userId: '000000000000000000000001'}),
+        Tag.find({ userId: user.id }),
         chai.request(app)
           .get('/api/tags')
           .set('Authorization', `Bearer ${token}`)
@@ -92,8 +94,8 @@ describe('Noteful API - Tags', () => {
         .then( ([data, res]) => {
           // data is an array of all tags from all users
           // const res = _res[0];
-          console.log('data', data);
-          console.log('res.body', res.body);
+          // console.log('data', data);
+          // console.log('res.body', res.body);
           expect(res).to.have.status(200);
           expect(res).to.be.json;
           expect(res.body).to.be.a('array');
@@ -101,38 +103,45 @@ describe('Noteful API - Tags', () => {
         });
     });
 
-    //   it('should return a list sorted by name with the correct fields and values', () => {
-    //     return Promise.all([
-    //       Tag.find().sort('name'),
-    //       chai.request(app).get('/api/tags')
-    //     ])
-    //       .then(([data, res]) => {
-    //         expect(res).to.have.status(200);
-    //         expect(res).to.be.json;
-    //         expect(res.body).to.be.a('array');
-    //         expect(res.body).to.have.length(data.length);
-    //         res.body.forEach(function (item, i) {
-    //           expect(item).to.be.a('object');
-    //           expect(item).to.have.all.keys('id', 'name', 'createdAt', 'updatedAt');
-    //           expect(item.id).to.equal(data[i].id);
-    //           expect(item.name).to.equal(data[i].name);
-    //           expect(new Date(item.createdAt)).to.eql(data[i].createdAt);
-    //           expect(new Date(item.updatedAt)).to.eql(data[i].updatedAt);
-    //         });
-    //       });
-    //   });
+    it.only('should return a list sorted by name with the correct fields and values', () => {
+      return Promise.all([
+        Tag.find({ userId: user.id }).sort('name'),
+        chai.request(app)
+          .get('/api/tags')
+          .set('Authorization', `Bearer ${token}`)
+      ])
+        .then(([data, res]) => {
+          console.log('data', data);
+          console.log('res.body', res.body);
+          expect(res).to.have.status(200);
+          expect(res).to.be.json;
+          expect(res.body).to.be.a('array');
+          expect(res.body).to.have.length(data.length);
+          res.body.forEach( (item, i) => {
+            expect(item).to.be.a('object');
+            expect(item).to.have.all.keys('id', 'name', 'createdAt', 'updatedAt', 'userId');
+            expect(item.id).to.equal(data[i].id);
+            expect(item.name).to.equal(data[i].name);
+            expect(new Date(item.createdAt)).to.eql(data[i].createdAt);
+            expect(new Date(item.updatedAt)).to.eql(data[i].updatedAt);
+          });
+        });
+    });
 
-    //   it('should catch errors and respond properly', () => {
-    //     sandbox.stub(Tag.schema.options.toObject, 'transform').throws('FakeError');
+    it('should catch errors and respond properly', () => {
+      sandbox.stub(Tag.schema.options.toJSON, 'transform').throws('FakeError');
 
-    //     return chai.request(app).get('/api/tags')
-    //       .then(res => {
-    //         expect(res).to.have.status(500);
-    //         expect(res).to.be.json;
-    //         expect(res.body).to.be.a('object');
-    //         expect(res.body.message).to.equal('Internal Server Error');
-    //       });
-    //   });
+      return chai.request(app)
+        .get('/api/tags')
+        .set('Authorization', `Bearer ${token}`)
+        .then(res => {
+          // console.log(res.body);
+          expect(res).to.have.status(500);
+          expect(res).to.be.json;
+          expect(res.body).to.be.a('object');
+          expect(res.body.message).to.equal('Internal Server Error');
+        });
+    });
 
   });
 
@@ -462,84 +471,3 @@ describe('Noteful API - Tags', () => {
   // });
 
 });
-
-// 'use strict';
-
-// const chai = require('chai');
-// const chaiHttp = require('chai-http');
-// const mongoose = require('mongoose');
-// const express = require('express');
-// const sinon = require('sinon');
-// const jwt = require('jsonwebtoken');
-// const app = require('../server');
-// const Tag = require('../models/tag');
-// const Note = require('../models/note');
-// const Folder = require('../models/folder');
-// const User = require('../models/user');
-// const { folders, notes, tags, users } = require('../db/data');
-// const { TEST_MONGODB_URI, JWT_SECRET } = require('../config');
-
-// chai.use(chaiHttp);
-// const expect = chai.expect;
-// const sandbox = sinon.createSandbox();
-
-// describe.only('Noteful API - Tags', function () {
-
-//   before(function () {
-//     return mongoose.connect(TEST_MONGODB_URI, { useNewUrlParser: true })
-//       .then(() => Promise.all([
-//         User.deleteMany({}),
-//         Note.deleteMany({}),
-//         Folder.deleteMany({}),
-//         Tag.deleteMany({})
-//       ]));
-//   });
-//   let user;
-//   let token;
-//   beforeEach(function () {
-//     return Promise.all([
-//       User.insertMany(users),
-//       Note.insertMany(notes),
-//       Folder.insertMany(folders),
-//       Tag.insertMany(tags),
-//       Tag.createIndexes(),
-//       Folder.createIndexes()  
-//     ])
-//       .then(([users]) => {
-//         user = users[0];
-//         token = jwt.sign({ user }, JWT_SECRET, { subject: user.username });
-//       });
-//   });
-
-//   afterEach(function () {
-//     sandbox.restore();
-//     return Promise.all([
-//       User.deleteMany({}),
-//       Note.deleteMany({}),
-//       Folder.deleteMany({}),
-//       Tag.deleteMany({})
-//     ]);
-//   });
-
-//   after(function () {
-//     return mongoose.disconnect();
-//   });
-
-//   describe('GET /api/tags', function () {
-
-//     it('should return the correct number of tags', function () {
-//       return Promise.all([
-//         Tag.find({ userId: user.id }),
-//         chai.request(app).get('/api/tags')
-//           .set('Authorization', `Bearer ${token}`)
-//       ])
-//         .then(([data, res]) => {
-//           expect(res).to.have.status(200);
-//           expect(res).to.be.json;
-//           expect(res.body).to.be.a('array');
-//           expect(res.body).to.have.length(data.length);
-//         });
-//     });
-
-//   });
-// });

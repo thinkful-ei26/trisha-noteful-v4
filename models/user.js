@@ -19,6 +19,7 @@ const UserSchema = new mongoose.Schema({
 });
 
 /* use mongoose transform instead of serialize, set it toJSON */
+// _id still exists but just replacing user.id on virtualize whenever you toJSON something
 UserSchema.set('toJSON', {
   virtuals: true, 
   transform: (doc, result) => {
