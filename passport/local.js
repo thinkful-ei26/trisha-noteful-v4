@@ -4,14 +4,10 @@
 const { Strategy : LocalStrategy } = require('passport-local');
 const User = require('../models/user');
 
-/* 
- - Define a new local strategy using new LocalStrategy 
- - Goal: define how your credentials are validated, "basicStrategy"
-*/
+// Define your "basicStrategy": how your credentials are validated
 const localStrategy = new LocalStrategy( (username, password, done) => {
   let user;
 
-  // 1) find one user when given the username
   User.findOne({ username })
     .then( results => {
       user = results;
@@ -24,7 +20,7 @@ const localStrategy = new LocalStrategy( (username, password, done) => {
         });
       }
 
-      //.validatePassport is from passport-local
+      //using passport-local, validate the password provided
       return  user.validatePassword(password);
     })
     .then( isValid => {
@@ -36,13 +32,10 @@ const localStrategy = new LocalStrategy( (username, password, done) => {
         });
       }
       //if no issues, then call done() and return user
-      // per Chris, the next() is not avaible in passport so we call done() 12/3/18 workshop
+      // next() is not avaible in passport so we call done()
       return done(null, user);
     })
     .catch( err => {
-      console.log(err);
-
-      //not sure what this is doing
       if (err.reason === 'LoginError') {
         return done(null, false);
       }

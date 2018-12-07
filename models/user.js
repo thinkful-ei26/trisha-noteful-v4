@@ -3,9 +3,7 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
-/* Define UserSchema and User model */
 const UserSchema = new mongoose.Schema({
-  //we can use virtualize a firstname and lastname for fullname, but we're lazy so:
   fullname : { type : String, default: ''},
   username : { 
     type : String, 
@@ -18,7 +16,6 @@ const UserSchema = new mongoose.Schema({
   }
 });
 
-/* use mongoose transform instead of serialize, set it toJSON */
 // _id still exists but just replacing user.id on virtualize whenever you toJSON something
 UserSchema.set('toJSON', {
   virtuals: true, 
@@ -29,10 +26,8 @@ UserSchema.set('toJSON', {
   }
 });
 
-//define .validatePassword as a static fn
+//define validatePassword static fn
 UserSchema.methods.validatePassword = function (incomingPassword) {
-  // const currentUser = this; //for clarification
-  // return incomingPassword === user.password; 
   return bcrypt.compare(incomingPassword, this.password);
 };
 
@@ -40,8 +35,5 @@ UserSchema.statics.hashPassword = function (incomingPassword) {
   const digest = bcrypt.hash(incomingPassword, 10);
   return digest;
 };
-
-// const User = mongoose.model('User', UserSchema);
-// module.exports = { User };  //if you use this, make sure that you the require on server.js is also an object
 
 module.exports = mongoose.model('User', UserSchema);

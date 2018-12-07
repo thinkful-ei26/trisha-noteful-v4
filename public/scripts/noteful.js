@@ -166,7 +166,7 @@ const noteful = (function () {
 
 
   function handleNoteFormSubmit() {
-    $('.js-note-edit-form').on('submit', function (event) {
+    $('.js-note-edit-form').on('keyup', (event) => {
       event.preventDefault();
 
       const editForm = $(event.currentTarget);

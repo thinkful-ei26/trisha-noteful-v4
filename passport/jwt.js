@@ -7,7 +7,7 @@ const { JWT_SECRET } = require('../config');
 const options = {
   secretOrKey: JWT_SECRET,
   jwtFromRequest: ExtractJwt.fromAuthHeaderWithScheme('Bearer'),
-  // algorithms: ['HS256'] //defaults to this
+  // algorithms: ['HS256'] //default
 };
 
 const jwtStrategy = new JwtStrategy(options, (payload, done) => {
