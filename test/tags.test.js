@@ -84,9 +84,12 @@ describe('Noteful API - Tags', () => {
 
   describe('GET /api/tags', () => {
 
-    it.only('should return the correct number of tags', () => {
+    it('should return the correct number of tags', () => {
       return Promise.all([
         Tag.find({ userId: user.id }),
+        //previously: 
+        //Tag.find({ userId: user._id }),
+        //Tag.find({ userId: '000000000000000000000001,' }),
         chai.request(app)
           .get('/api/tags')
           .set('Authorization', `Bearer ${token}`)
@@ -103,7 +106,7 @@ describe('Noteful API - Tags', () => {
         });
     });
 
-    it.only('should return a list sorted by name with the correct fields and values', () => {
+    it('should return a list sorted by name with the correct fields and values', () => {
       return Promise.all([
         Tag.find({ userId: user.id }).sort('name'),
         chai.request(app)
@@ -129,6 +132,8 @@ describe('Noteful API - Tags', () => {
     });
 
     it('should catch errors and respond properly', () => {
+
+      //everytime we're making the tag schema, we're giving it a name transform and then just throw an error
       sandbox.stub(Tag.schema.options.toJSON, 'transform').throws('FakeError');
 
       return chai.request(app)
@@ -145,62 +150,72 @@ describe('Noteful API - Tags', () => {
 
   });
 
-  // describe('GET /api/tags/:id', () => {
+  describe('GET /api/tags/:id', () => {
 
-  //   it('should return correct tags', () => {
-  //     let data;
-  //     return Tag.findOne()
-  //       .then(_data => {
-  //         data = _data;
-  //         return chai.request(app)
-  //           .get(`/api/tags/${data.id}`);
-  //       })
-  //       .then((res) => {
-  //         expect(res).to.have.status(200);
-  //         expect(res).to.be.json;
-  //         expect(res.body).to.be.an('object');
-  //         expect(res.body).to.have.all.keys('id', 'name', 'createdAt', 'updatedAt');
-  //         expect(res.body.id).to.equal(data.id);
-  //         expect(res.body.name).to.equal(data.name);
-  //         expect(new Date(res.body.createdAt)).to.eql(data.createdAt);
-  //         expect(new Date(res.body.updatedAt)).to.eql(data.updatedAt);
-  //       });
-  //   });
+    it('should return correct tags', () => {
+      let data;
+      return Tag.findOne({ userId: user.id }) //user.id is coming from beforeEach hook, for the user that is logged in
+        .then(_data => {
+          // console.log('_data: ', _data);
+          data = _data;
+          return chai.request(app)
+            .get(`/api/tags/${data.id}`)
+            .set('Authorization', `Bearer ${token}`);
+        })
+        .then( res => {
+          // console.log(res.body);
+          // console.log(data.id);
+          expect(res).to.have.status(200);
+          expect(res).to.be.json;
+          expect(res.body).to.be.an('object');
+          expect(res.body).to.have.all.keys('id', 'name', 'createdAt', 'updatedAt', 'userId');
+          expect(res.body.id).to.equal(data.id);
+          expect(res.body.name).to.equal(data.name);
+          expect(new Date(res.body.createdAt)).to.eql(data.createdAt);
+          expect(new Date(res.body.updatedAt)).to.eql(data.updatedAt);
+        });
+    });
 
-  //   it('should respond with a 400 for an invalid id', () => {
-  //     return chai.request(app)
-  //       .get('/api/tags/NOT-A-VALID-ID')
-  //       .then(res => {
-  //         expect(res).to.have.status(400);
-  //         expect(res.body.message).to.equal('The `id` is not valid');
-  //       });
-  //   });
+    it('should respond with a 400 for an invalid id', () => {
+      return chai.request(app)
+        .get('/api/tags/NOT-A-VALID-ID')
+        .set('Authorization', `Bearer ${token}`)
+        .then(res => {
+          expect(res).to.have.status(400);
+          expect(res.body.message).to.equal('The `id` is not valid');
+        });
+    });
 
-  //   it('should respond with a 404 for an id that does not exist', () => {
-  //     // The string "DOESNOTEXIST" is 12 bytes which is a valid Mongo ObjectId
-  //     return chai.request(app)
-  //       .get('/api/tags/DOESNOTEXIST')
-  //       .then(res => {
-  //         expect(res).to.have.status(404);
-  //       });
-  //   });
+    it('should respond with a 404 for an id that does not exist', () => {
+      // The string "DOESNOTEXIST" is 12 bytes which is a valid Mongo ObjectId
+      return chai.request(app)
+        .get('/api/tags/DOESNOTEXIST')
+        .set('Authorization', `Bearer ${token}`)
+        .then(res => {
+          expect(res).to.have.status(404);
+        });
+    });
 
-  //   it('should catch errors and respond properly', () => {
-  //     sandbox.stub(Tag.schema.options.toObject, 'transform').throws('FakeError');
+    it('should catch errors and respond properly', () => {
+      //whenever you want to get a res.json() in the tags route, use sandbox.stub to throw an error
+      sandbox.stub(Tag.schema.options.toJSON, 'transform').throws('FakeError');
 
-  //     return Tag.findOne()
-  //       .then(data => {
-  //         return chai.request(app).get(`/api/tags/${data.id}`);
-  //       })
-  //       .then(res => {
-  //         expect(res).to.have.status(500);
-  //         expect(res).to.be.json;
-  //         expect(res.body).to.be.a('object');
-  //         expect(res.body.message).to.equal('Internal Server Error');
-  //       });
-  //   });
+      return Tag.findOne({ userId: user.id }) //you pass some data that is throwing an error from line 200
+        .then(data => {
+          return chai.request(app)
+            .get(`/api/tags/${data.id}`)
+            .set('Authorization', `Bearer ${token}`);
+        })
+        .then(res => {
+          console.log(res.body);
+          expect(res).to.have.status(500);
+          expect(res).to.be.json;
+          expect(res.body).to.be.a('object');
+          expect(res.body.message).to.equal('Internal Server Error');
+        });
+    });
 
-  // });
+  });
 
   // describe('POST /api/tags', () => {
 
