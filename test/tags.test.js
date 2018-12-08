@@ -448,7 +448,7 @@ describe('Noteful API - Tags', () => {
         .then( (res) => {
           expect(res).to.have.status(204);
           expect(res.body).to.be.empty;
-          return Note.count({ tags: tagId });
+          return Note.countDocuments({ tags: tagId });
         })
         .then(count => {
           expect(count).to.equal(0);

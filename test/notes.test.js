@@ -29,7 +29,7 @@ chai.use(chaiHttp);
 const expect = chai.expect;
 const sandbox = sinon.createSandbox();
 
-describe('Noteful API - Folders', () => {
+describe('Noteful API - Notes', () => {
   
   //set token and user at high scope to be accessible for rest of test
   let token;
@@ -332,9 +332,9 @@ describe('Noteful API - Folders', () => {
 
   });
 
-  describe('POST /api/notes', function () {
+  describe('POST /api/notes', () => {
 
-    it('should create and return a new item when provided valid title and content', function () {
+    it('should create and return a new item when provided valid title and content', () => {
       const newItem = {
         title: 'The best article about cats ever!',
         content: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor...'
@@ -509,7 +509,7 @@ describe('Noteful API - Folders', () => {
 
   });
 
-  describe('PUT /api/notes/:id', function () {
+  describe('PUT /api/notes/:id', () => {
 
     it('should update the note when provided a valid title', function () {
       const updateItem = {
@@ -524,7 +524,7 @@ describe('Noteful API - Folders', () => {
             .set('Authorization', `Bearer ${token}`)
             .send(updateItem);
         })
-        .then(function (res) {
+        .then( res => {
           // console.log('res.body',res.body);
           // console.log(data);
           expect(res).to.have.status(200);
@@ -605,7 +605,7 @@ describe('Noteful API - Folders', () => {
         });
     });
 
-    it.only('should update the note when provided a valid tag', () => {
+    it('should update the note when provided a valid tag', () => {
       const updateItem = {
         tags: []
       };
@@ -623,8 +623,7 @@ describe('Noteful API - Folders', () => {
             .set('Authorization', `Bearer ${token}`)
             .send(updateItem);
         })
-        .then(function (res) {
-          
+        .then( res => {
           expect(res).to.have.status(200);
           expect(res).to.be.json;
           expect(res.body).to.be.a('object');
@@ -633,10 +632,10 @@ describe('Noteful API - Folders', () => {
           expect(res.body.title).to.equal(data.title);
           expect(res.body.content).to.equal(data.content);
           expect(res.body.folderId).to.equal(data.folderId);
-          // console.log('res.body.tags[0].id', res.body.tags[0].id); //expected
-          // console.log('updateItem.tags', updateItem.tags.toString());
+          // // console.log('res.body.tags[0].id', res.body.tags[0].id); //expected
+          // // console.log('updateItem.tags', updateItem.tags.toString());
           expect(res.body.tags[0].id).to.equal(updateItem.tags.toString());
-          expect(res.body.userId).to.equal(data.userId);
+          expect(res.body.userId).to.equal(data.userId.toString());
           expect(new Date(res.body.createdAt)).to.eql(data.createdAt); //use eql (not equal) for time & date 
           // expect note to have been updated
           expect(new Date(res.body.updatedAt)).to.greaterThan(data.updatedAt);
@@ -797,7 +796,7 @@ describe('Noteful API - Folders', () => {
         })
         .then(res => {
           expect(res).to.have.status(204);
-          return Note.count({ _id: data.id });
+          return Note.countDocuments({ _id: data.id });
         })
         .then(count => {
           expect(count).to.equal(0);

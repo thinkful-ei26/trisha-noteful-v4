@@ -95,7 +95,7 @@ const validateFolderId = (folderId, userId) => {
 
 const validateTagIds = (tags, userId) => {
   //null, undefined, empty string, negative number
-  if(tags === undefined || tags === '') {
+  if(tags === undefined) {
     return Promise.resolve();
   }
   
@@ -165,7 +165,6 @@ router.post('/', (req, res, next) => {
 router.put('/:id', (req, res, next) => {
   const { id } = req.params;
   const userId = req.user.id;
-  // const { folderId, tags } = req.body;
 
   const toUpdate = {};
   const updateableFields = ['title', 'content', 'folderId', 'tags'];
