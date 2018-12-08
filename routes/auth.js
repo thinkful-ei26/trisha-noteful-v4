@@ -8,15 +8,11 @@ const { JWT_SECRET, JWT_EXPIRY } = require('../config');
 
 const router = express.Router();
 
-/* 
-  failWithError option configures the middleware to throw an error instead of automatically returning a 401 response. The error is then caught by the error handling middleware on server.js and returned as JSON.
-  - you need to give a json error instead of plaintext 
-  */
 const options = { session: false, failWithError: true };
 
 const localAuth = passport.authenticate('local', options);
 
-// /* POST on /api/login and send jwt authToken as response*/
+/* POST on /api/login and send jwt authToken as response*/
 router.post('/', localAuth, (req, res) => {
   const authToken = createAuthToken(req.user);
   res.json({ authToken });
