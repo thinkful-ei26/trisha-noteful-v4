@@ -3,10 +3,8 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const passport = require('passport');
-
 const Folder = require('../models/folder');
 const Note = require('../models/note');
-
 const router = express.Router();
 
 //Protect endpoints using JWT Strategy
@@ -64,15 +62,6 @@ router.post('/', (req, res, next) => {
     err.status = 400;
     return next(err);
   }
-
-  // Folder.find({userId})
-  //   .sort('name')
-  //   .then(result => {
-  //     res.location(`${req.originalUrl}/${result.id}`).status(201).json(result);
-  //   })
-  //   .catch(err => {
-  //     next(err);
-  //   });
 
   Folder.create(newFolder)
     .then(result => {

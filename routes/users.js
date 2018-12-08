@@ -27,15 +27,6 @@ router.post('/', (req, res, next) => {
     }
   );
   
-  /* 12/4/18: Mentor Q: why use res.status.json vs throw error? */
-  // if (nonStringField) {
-  //   const err = new Error(`The field ${nonStringField} must be type String`);
-  //   err.status = 422;
-  //   return next(err);
-  // }
-
-  //if you use {} on res.status.json make sure you return it
-  //otherwise without the curly braces you do not to return it 
   if( nonStringField ) {
     return res.status(422).json({
       code: 422,
@@ -55,12 +46,6 @@ router.post('/', (req, res, next) => {
     const err = new Error(`The field: ${nonTrimmedField} cannot start or end with a whitespace`);
     err.status = 422;
     return next(err);
-    // return res.status(422).json({
-    //   code: 422,
-    //   reason: 'ValidationError',
-    //   message: 'Cannot start or end with whitespace',
-    //   location: nonTrimmedField
-    // });
   }
 
   const sizedFields = {

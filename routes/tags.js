@@ -3,7 +3,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const passport = require('passport');
-
 const Tag = require('../models/tag');
 const Note = require('../models/note');
 
@@ -64,8 +63,6 @@ router.post('/', (req, res, next) => {
     err.status = 400;
     return next(err);
   }
-
-  //to test for duplicate tag name, alternatively you can find all the tags from that user, do a count to see if there's an existing tag with the same name
 
   Tag.create(newTag)
     .then(result => {

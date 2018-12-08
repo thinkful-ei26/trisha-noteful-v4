@@ -3,11 +3,9 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const passport = require('passport');
-
 const Note = require('../models/note');
 const Folder = require('../models/folder');
 const Tag = require('../models/tag');
-
 const router = express.Router();
 
 router.use('/', passport.authenticate('jwt', { session: false, failWithError: true }));
@@ -74,15 +72,6 @@ router.get('/:id', (req, res, next) => {
 });
 
 /* ========== folderId & tags validation - helper fns ========== */
-
-//folderId = invalid
-//folderId = "" (empty string)
-//folderId = valid mongo _id but does not exist
-//folderId = folder belongs to another user
-
-//folderId = undefined
-//folderId = valid mongo _id and folder exist
-
 const validateFolderId = (folderId, userId) => {
   //null, undefined, empty string, negative number
   if(folderId === undefined || folderId === '' ) {
@@ -123,8 +112,6 @@ const validateTagIds = (tags, userId) => {
     return Promise.reject(err);
   }
 
-  //i don't have a duplicate name validation on validateTags, the duplicate name is being handled on routes/tags.js in POST req
-
   return Tag.countDocuments({
     $and: [ {
       _id: { $in: tags },
@@ -144,7 +131,6 @@ const validateTagIds = (tags, userId) => {
 /* ========== POST/CREATE AN ITEM ========== */
 router.post('/', (req, res, next) => {
   const { title, content, folderId, tags } = req.body;
-  //req.user coming from passport - we don't need userId in req.body for sensitive information
   const userId = req.user.id;
 
   /***** Never trust users - validate input *****/
@@ -156,9 +142,6 @@ router.post('/', (req, res, next) => {
 
   const newNote = { title, content, userId };
 
-  /* You're going to repeat similar validations on POST and PUT enpoints, just create a seperate fn so you can re-use it. remember we are lazy (DRY) */
-
-  //use promise all instead of chaining .then() for readability
   Promise.all([
     validateFolderId(folderId, userId),
     validateTagIds(tags, userId)
@@ -212,7 +195,6 @@ router.put('/:id', (req, res, next) => {
     toUpdate.$unset = { folderId: 1 };
   }
 
-  //moved all to validatetags and validatefolder to separate fns, then invoke below
   Promise.all([
     validateFolderId(toUpdate.folderId, userId),
     validateTagIds(toUpdate.tags, userId)
