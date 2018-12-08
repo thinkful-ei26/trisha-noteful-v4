@@ -605,48 +605,45 @@ describe('Noteful API - Folders', () => {
         });
     });
 
-    // it('should update the note when provided a valid tag', function () {
-    //   const updateItem = {
-    //     tags: []
-    //   };
-    //   let data;
+    it.only('should update the note when provided a valid tag', () => {
+      const updateItem = {
+        tags: []
+      };
+      let data;
 
-    //   return Promise.all([
-    //     Tag.findOne({ userId : user.id }),
-    //     Note.findOne( { userId : user.id })
-    //   ])
-    //     .then(([tag, note]) => {
-    //       updateItem.tags.push(tag.id);
-    //       data = note;
-    //       return chai.request(app)
-    //         .put(`/api/notes/${note.id}`)
-    //         .set('Authorization', `Bearer ${token}`)
-    //         .send(updateItem);
-    //     })
-    //     .then(function (res) {
+      return Promise.all([
+        Tag.findOne({ userId : user.id }),
+        Note.findOne( { userId : user.id })
+      ])
+        .then(([tag, note]) => {
+          updateItem.tags.push(tag.id);
+          data = note;
+          return chai.request(app)
+            .put(`/api/notes/${note.id}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send(updateItem);
+        })
+        .then(function (res) {
           
-    //       expect(res).to.have.status(200);
-    //       expect(res).to.be.json;
-    //       expect(res.body).to.be.a('object');
-    //       expect(res.body).to.include.keys('id', 'title', 'content', 'createdAt', 'updatedAt', 'userId');
-    //       expect(res.body.id).to.equal(data.id);
-    //       expect(res.body.title).to.equal(data.title);
-    //       expect(res.body.content).to.equal(data.content);
-    //       expect(res.body.folderId).to.equal(data.folderId);
+          expect(res).to.have.status(200);
+          expect(res).to.be.json;
+          expect(res.body).to.be.a('object');
+          expect(res.body).to.include.keys('id', 'title', 'content', 'createdAt', 'updatedAt', 'userId');
+          expect(res.body.id).to.equal(data.id);
+          expect(res.body.title).to.equal(data.title);
+          expect(res.body.content).to.equal(data.content);
+          expect(res.body.folderId).to.equal(data.folderId);
+          // console.log('res.body.tags[0].id', res.body.tags[0].id); //expected
+          // console.log('updateItem.tags', updateItem.tags.toString());
+          expect(res.body.tags[0].id).to.equal(updateItem.tags.toString());
+          expect(res.body.userId).to.equal(data.userId);
+          expect(new Date(res.body.createdAt)).to.eql(data.createdAt); //use eql (not equal) for time & date 
+          // expect note to have been updated
+          expect(new Date(res.body.updatedAt)).to.greaterThan(data.updatedAt);
+        });
+    });
 
-    //       // console.log('res.body.tags[0].id', res.body.tags[0].id); //expected
-    //       // console.log('updateItem.tags', updateItem.tags);
-
-    //       // expect(res.body.tags[0].id).to.equal(updateItem.tags.toString());
-
-    //       expect(res.body.userId).to.equal(data.userId);
-    //       expect(new Date(res.body.createdAt)).to.eql(data.createdAt); //use eql for times not equal
-    //       // expect note to have been updated
-    //       expect(new Date(res.body.updatedAt)).to.greaterThan(data.updatedAt);
-    //     });
-    // });
-
-    it('should respond with status 400 and an error message when `id` is not valid', function () {
+    it('should respond with status 400 and an error message when `id` is not valid', () => {
       const updateItem = {
         title: 'What about dogs?!',
         content: 'Lorem ipsum dolor sit amet, sed do eiusmod tempor...'
@@ -661,7 +658,7 @@ describe('Noteful API - Folders', () => {
         });
     });
 
-    it('should respond with a 404 for an id that does not exist', function () {
+    it('should respond with a 404 for an id that does not exist', () => {
       // The string "DOESNOTEXIST" is 12 bytes which is a valid Mongo ObjectId
       const updateItem = {
         title: 'What about dogs?!',
@@ -676,7 +673,7 @@ describe('Noteful API - Folders', () => {
         });
     });
 
-    it('should return an error when "title" is an empty string', function () {
+    it('should return an error when "title" is an empty string', () => {
       const updateItem = { title: '' };
       let data;
       return Note.findOne({ userId: user.id })
@@ -695,7 +692,7 @@ describe('Noteful API - Folders', () => {
         });
     });
 
-    it('should return an error when `folderId` is not valid ', function () {
+    it('should return an error when `folderId` is not valid ', () => {
       const updateItem = {
         folderId: 'NOT-A-VALID-ID'
       };
@@ -714,7 +711,7 @@ describe('Noteful API - Folders', () => {
         });
     });
 
-    it('should unset a note folderId when provided a empty string', function () {
+    it('should unset a note folderId when provided a empty string', () => {
       const updateItem = {
         folderId: ''
       };
@@ -744,7 +741,7 @@ describe('Noteful API - Folders', () => {
         });
     });
 
-    it('should return an error when a tag `id` is not valid ', function () {
+    it('should return an error when a tag `id` is not valid ', () => {
       const updateItem = {
         tags: ['NOT-A-VALID-ID']
       };
@@ -763,7 +760,7 @@ describe('Noteful API - Folders', () => {
         });
     });
 
-    it('should catch errors and respond properly', function () {
+    it('should catch errors and respond properly', () => {
       sandbox.stub(Note.schema.options.toJSON, 'transform').throws('FakeError');
 
       const updateItem = {
@@ -787,9 +784,9 @@ describe('Noteful API - Folders', () => {
 
   });
 
-  describe('DELETE /api/notes/:id', function () {
+  describe('DELETE /api/notes/:id', () => {
 
-    it('should delete an existing document and respond with 204', function () {
+    it('should delete an existing document and respond with 204', () => {
       let data;
       return Note.findOne({ userId: user.id })
         .then(_data => {
@@ -807,7 +804,7 @@ describe('Noteful API - Folders', () => {
         });
     });
 
-    it('should respond with a 400 for an invalid id', function () {
+    it('should respond with a 400 for an invalid id', () => {
       return chai.request(app)
         .delete('/api/notes/NOT-A-VALID-ID')
         .set('Authorization', `Bearer ${token}`)
@@ -817,7 +814,7 @@ describe('Noteful API - Folders', () => {
         });
     });
 
-    it('should catch errors and respond properly', function () {
+    it('should catch errors and respond properly', () => {
       sandbox.stub(express.response, 'sendStatus').throws('FakeError');
       return Note.findOne({ userId: user.id })
         .then(data => {

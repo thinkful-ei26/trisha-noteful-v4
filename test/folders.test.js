@@ -88,13 +88,11 @@ describe('Noteful API - Folders', () => {
       return Promise.all([
         Folder.find({ userId: user.id})
           .sort('name'),
-        chai.request(app) //to use chai http's live integration testing , you need to make a call to the app or url. request.app will open the server for incoming 
+        chai.request(app)
           .get('/api/folders')
           .set('Authorization', `Bearer ${token}`)
       ])
         .then(([data, res]) => {
-          // console.log('this is data', data);
-          // console.log('this is res', res.body);
           expect(res).to.have.status(200);
           expect(res).to.be.json;
           expect(res.body).to.be.a('array');
@@ -146,12 +144,12 @@ describe('Noteful API - Folders', () => {
 
     it('should return correct folder', () => {
       let data;
-      return Folder.findOne({ userId: user.id }) //find a note that is from the same user with the same jwt from before
+      return Folder.findOne({ userId: user.id }) 
         .then(_data => {
           data = _data;
           return chai.request(app)
             .get(`/api/folders/${data.id}`)
-            .set('Authorization', `Bearer ${token}`); //set is the same POSTMAN 
+            .set('Authorization', `Bearer ${token}`); 
         })
         .then((res) => {
           expect(res).to.have.status(200);
@@ -218,8 +216,6 @@ describe('Noteful API - Folders', () => {
         .set('Authorization', `Bearer ${token}`)
         .send(newItem)
         .then( res => {
-          // console.log(res.body);
-          //grab one folder from the array of folders
           body = res.body;
           expect(res).to.have.status(201);
           expect(res).to.have.header('location');
@@ -314,8 +310,6 @@ describe('Noteful API - Folders', () => {
             .send(updateItem);
         })
         .then( res => {
-          // console.log('res.body: ', res.body);
-          // console.log('data.id: ', data.id);
           expect(res).to.have.status(200);
           expect(res).to.be.json;
           expect(res.body).to.be.a('object');
@@ -367,7 +361,6 @@ describe('Noteful API - Folders', () => {
             .send(updateItem);
         })
         .then(res => {
-          // console.log(res.body);
           expect(res).to.have.status(400);
           expect(res).to.be.json;
           expect(res.body).to.be.a('object');
@@ -387,7 +380,6 @@ describe('Noteful API - Folders', () => {
             .send(updateItem);
         })
         .then(res => {
-          // console.log(res.body);
           expect(res).to.have.status(400);
           expect(res).to.be.json;
           expect(res.body).to.be.a('object');
@@ -398,7 +390,6 @@ describe('Noteful API - Folders', () => {
     it('should return an error when given a duplicate name', () => {
       return Folder.find({ userId: user.id }).limit(2)
         .then(results => {
-          // console.log(results); //should be an array of 2 folders
           const [item1, item2] = results;
           item1.name = item2.name;
           return chai.request(app)
@@ -407,7 +398,6 @@ describe('Noteful API - Folders', () => {
             .send(item1);
         })
         .then(res => {
-          // console.log(res.body);
           expect(res).to.have.status(400);
           expect(res).to.be.json;
           expect(res.body).to.be.a('object');
@@ -416,12 +406,8 @@ describe('Noteful API - Folders', () => {
     });
 
     it('should catch errors and respond properly', () => {
-      //let's grab the res.json(results) and give it bad information
       const badInfo = sandbox.stub(Folder.schema.options.toJSON, 'transform').throws('FakeError');
-      // console.log(s);
-
-      //alternatively, you could just feed Folder.findOneAndUpdate hardcoded badinfo
-
+     
       const updateItem = { name: 'Updated Name' };
       let data;
       return Folder.findOneAndUpdate({badInfo})
@@ -449,7 +435,6 @@ describe('Noteful API - Folders', () => {
       return Folder.findOneAndRemove({ userId: user.id })
         .then(_data => {
           data = _data;
-          // console.log('this is data',data);
           return chai.request(app)
             .delete(`/api/folders/${data.id}`)
             .set('Authorization', `Bearer ${token}`);
@@ -466,8 +451,6 @@ describe('Noteful API - Folders', () => {
 
     it('should delete an existing folder and remove folderId reference from note', () => {
       let folderId;
-      //find a one note with a folderId that has an existing value
-      //AND belonging to the correct user 
       return Note.findOne({ 
         $and: [ 
           { folderId: { $exists: true } }, 
@@ -475,7 +458,6 @@ describe('Noteful API - Folders', () => {
         ] 
       }) 
         .then(data => {
-          // console.log(data);
           folderId = data.folderId;
           return chai.request(app)
             .delete(`/api/folders/${folderId}`)
@@ -497,17 +479,13 @@ describe('Noteful API - Folders', () => {
         .delete('/api/folders/NOT-A-VALID-ID')
         .set('Authorization', `Bearer ${token}`)
         .then(res => {
-          // console.log(res.body);
           expect(res).to.have.status(400);
           expect(res.body.message).to.equal('The `id` is not valid');
         });
     });
 
     it('should catch errors and respond properly', () => {
-      
-      //we've got this badData res.json(results), feed error-inducing badData to test if our error messages is working
       sandbox.stub(express.response, 'sendStatus').throws('FakeError');
-      // console.log(badData);
 
       return Folder.findOneAndRemove({ userId: user.id })
         .then(data => {

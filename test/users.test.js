@@ -4,11 +4,8 @@ const app = require('../server');
 const chai = require('chai');
 const chaiHttp = require('chai-http');
 const mongoose = require('mongoose');
-
 const { TEST_MONGODB_URI } = require('../config');
-
 const User = require('../models/user');
-
 const expect = chai.expect;
 
 chai.use(chaiHttp);
@@ -180,9 +177,6 @@ describe('Noteful API - Users', () => {
           fullname
         })
         .then( res => {
-          //because of the new mocha/chai update, .fail doesn't work anymore
-          // expect.fail(` ${username} `, `${username}`, 'Request should not succeed on non-trimmed username')
-
           expect(res).to.have.status(422);
           expect(res.body.message).to.equal('The field: username cannot start or end with a whitespace');
         });

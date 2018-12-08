@@ -54,21 +54,16 @@ describe('Noteful API - Tags', () => {
       Note.insertMany(notes)
     ])
       .then( ([users]) => {
-        // console.log('array of users', users);
-        user = users[0]; //ran into a problem where I was setting let user in higher scope, then within this scope, I was setting const user = users[0]
-        //so everytime that I ran each test, my code will not look at the higher scope user, so the id is returning undefined
-        /* doesn't matter if you do user._id or user.id, because of the way we wrote the user schema (virtualize) */
-        // console.log('this is user1: ', user);
+        user = users[0];
         token =  jwt.sign( { user }, JWT_SECRET, {
           subject: user.username,
           expiresIn: JWT_EXPIRY
         });
-        // console.log('this is token:', token);
       });
   });
 
   afterEach(() => {
-    //since we're using sandbox to change the tags schema, restore it from previous state after each tests
+    //using sandbox to change tags schema in tests, after each tests restore schema from previous state 
     sandbox.restore();
     return Promise.all([
       User.deleteMany(),
@@ -87,18 +82,12 @@ describe('Noteful API - Tags', () => {
     it('should return the correct number of tags', () => {
       return Promise.all([
         Tag.find({ userId: user.id }),
-        //previously: 
-        //Tag.find({ userId: user._id }),
-        //Tag.find({ userId: '000000000000000000000001,' }),
         chai.request(app)
           .get('/api/tags')
           .set('Authorization', `Bearer ${token}`)
       ])
         .then( ([data, res]) => {
           // data is an array of all tags from all users
-          // const res = _res[0];
-          // console.log('data', data);
-          // console.log('res.body', res.body);
           expect(res).to.have.status(200);
           expect(res).to.be.json;
           expect(res.body).to.be.a('array');
@@ -114,8 +103,6 @@ describe('Noteful API - Tags', () => {
           .set('Authorization', `Bearer ${token}`)
       ])
         .then(([data, res]) => {
-          // console.log('data', data);
-          // console.log('res.body', res.body);
           expect(res).to.have.status(200);
           expect(res).to.be.json;
           expect(res.body).to.be.a('array');
@@ -154,17 +141,14 @@ describe('Noteful API - Tags', () => {
 
     it('should return correct tags', () => {
       let data;
-      return Tag.findOne({ userId: user.id }) //user.id is coming from beforeEach hook, for the user that is logged in
+      return Tag.findOne({ userId: user.id })
         .then(_data => {
-          // console.log('_data: ', _data);
           data = _data;
           return chai.request(app)
             .get(`/api/tags/${data.id}`)
             .set('Authorization', `Bearer ${token}`);
         })
         .then( res => {
-          // console.log(res.body);
-          // console.log(data.id);
           expect(res).to.have.status(200);
           expect(res).to.be.json;
           expect(res.body).to.be.an('object');
@@ -197,17 +181,15 @@ describe('Noteful API - Tags', () => {
     });
 
     it('should catch errors and respond properly', () => {
-      //whenever you want to get a res.json() in the tags route, use sandbox.stub to throw an error
       sandbox.stub(Tag.schema.options.toJSON, 'transform').throws('FakeError');
 
-      return Tag.findOne({ userId: user.id }) //you pass some data that is throwing an error from line 200
+      return Tag.findOne({ userId: user.id })
         .then(data => {
           return chai.request(app)
             .get(`/api/tags/${data.id}`)
             .set('Authorization', `Bearer ${token}`);
         })
         .then(res => {
-          // console.log(res.body);
           expect(res).to.have.status(500);
           expect(res).to.be.json;
           expect(res.body).to.be.a('object');
@@ -236,7 +218,6 @@ describe('Noteful API - Tags', () => {
           return Tag.findOne({ _id: body.id });
         })
         .then(data => {
-          // console.log(data); //print the newTag we just created from directly from the db, then compare to the response from the server
           expect(body.id).to.equal(data.id);
           expect(body.name).to.equal(data.name);
           expect(new Date(body.createdAt)).to.eql(data.createdAt);
@@ -251,7 +232,6 @@ describe('Noteful API - Tags', () => {
         .set('Authorization', `Bearer ${token}`)
         .send(newItem)
         .then(res => {
-          // console.log(res.body);
           expect(res).to.have.status(400);
           expect(res).to.be.json;
           expect(res.body).to.be.a('object');
@@ -283,11 +263,10 @@ describe('Noteful API - Tags', () => {
             .send(newItem);
         })
         .then(res => {
-          //console.log(res.body);
           expect(res).to.have.status(400);
           expect(res).to.be.json;
           expect(res.body).to.be.a('object');
-          expect(res.body.message).to.equal('Tag name already exists'); //error is coming from routes/tags.js post error handler, mongodb has native err.code === 11000 used for duplicate document
+          expect(res.body.message).to.equal('Tag name already exists');
         });
     });
 
@@ -450,7 +429,7 @@ describe('Noteful API - Tags', () => {
         .then( (res) => {
           expect(res).to.have.status(204);
           expect(res.body).to.be.empty;
-          return Tag.countDocuments({ _id: data.id }); //grab the tags from db and count all return it to compare it on next promise chain
+          return Tag.countDocuments({ _id: data.id }); 
         })
         .then(count => {
           expect(count).to.equal(0);
@@ -459,12 +438,9 @@ describe('Noteful API - Tags', () => {
 
     it('should delete an existing tag and remove tag reference from note', () => {
       let tagId;
-      //findone note with the tags value exist and it's not equal to an empty array
       return Note.findOne({ tags: { $exists: true, $ne: [] } })
         .then(data => {
-          // console.log(data);
           tagId = data.tags[0];
-
           return chai.request(app)
             .delete(`/api/tags/${tagId}`)
             .set('Authorization', `Bearer ${token}`);
